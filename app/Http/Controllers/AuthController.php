@@ -11,69 +11,53 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+    public function showLogin()
+    {
+        return view('auth.login');
+    }
+
+    public function showRegister()
+    {
+        return view('auth.register');
+    }
+
     public function register(RegisterRequest $request)
     {
-
         $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'password' => Hash::make($request->password),
+            'name'         => $request->name,
+            'email'        => $request->email,
+            'password'     => Hash::make($request->password),
             'phone_number' => $request->phone_number,
-            'role'     => 'user',
-            'status'   => 1,
+            'role'         => 'user',
+            'status'       => 1,
         ]);
 
         Auth::login($user);
-
-
-        //view
+        return redirect()->route('home')->with('success', 'Đăng ký tài khoản thành công!');
     }
-
-    /**
-     * LOGIN
-     */
-
 
     public function login(LoginRequest $request)
     {
+        $credentials = $request->only('email', 'password');
 
-        $credentials = $request->only('name', 'password');
-
-        if (Auth::attempt($credentials)) {
+        if (Auth::attempt($credentials, $request->has('remember'))) {
             $request->session()->regenerate();
-           if(Auth::user()->role === 'Admin'){
-                return redirect()->route('index-news-admin');
-           }else{
-            // để test trang admin , sau phân quyền sửa lại
-                return redirect()->route('home');
-           }
+            return (Auth::user()->role === 'Admin')
+                ? redirect()->route('index-news-admin')
+                : redirect()->route('home');
         }
 
+        // XÓA BỎ ->withInput() để không giữ lại email cũ trong form
         return back()->withErrors([
-            'name' => 'Email hoặc mật khẩu không đúng',
+            'email' => 'Thông tin đăng nhập không chính xác.',
         ]);
     }
 
-    /**
-     * LOGOUT
-     */
     public function logout(Request $request)
     {
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-
-        // Sửa dòng này:
-        return redirect()->route('login-form')->with('success', 'Đã đăng xuất!');
-
-        //view
-    }
-    public function showLogin()
-    {
-        return view('auth.login');
-    }
-    public function showRegister()
-    {
-        //view
+        return redirect()->route('login-form')->with('status', 'Đã đăng xuất!');
     }
 }

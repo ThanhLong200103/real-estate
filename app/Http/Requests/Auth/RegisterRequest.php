@@ -29,4 +29,17 @@ class RegisterRequest extends FormRequest
             // 'profile_picture' => 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'name.required'         => 'Vui lòng nhập họ tên.',
+            'email.required'        => 'Vui lòng nhập email.',
+            'email.unique'          => 'Email này đã được đăng ký.',
+            'phone_number.required' => 'Vui lòng nhập số điện thoại.',
+            'password.required'     => 'Vui lòng nhập mật khẩu.',
+            'password.min'          => 'Mật khẩu phải có ít nhất 6 ký tự.',
+            'password.confirmed'    => 'Xác nhận mật khẩu không khớp.',
+        ];
+    }
 }
