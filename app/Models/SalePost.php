@@ -8,7 +8,7 @@ class SalePost extends Model
 {
     protected $table = 'sale_posts';
     protected $fillable = [
-        'user_id',
+        'user_id', // Phải khớp với cột trong Migration và dòng code ở Controller trên
         'title',
         'description',
         'price',
@@ -26,7 +26,7 @@ class SalePost extends Model
 
     public function images()
     {
-        return $this->hasMany(SalePostImage::class);
+        return $this->hasMany(SalePostImage::class, 'sale_post_id');
     }
 
     public function chats()

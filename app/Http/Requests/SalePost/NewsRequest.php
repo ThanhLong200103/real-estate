@@ -11,7 +11,7 @@ class NewsRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,11 +22,11 @@ class NewsRequest extends FormRequest
     public function rules(): array
     {
         return [
-    'title' => 'required|string|max:255',
-           'status'=>'required|string',
-        'description' => 'required|string|min:10',
-     'image_array_new'   => 'nullable|array',
-'image_array_new.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048',
+            'title' => 'required|string|max:255',
+            'status' => 'required|boolean',
+            'description' => 'required|string|min:10',
+            'image_array_new'   => 'nullable|array',
+            'image_array_new.*' => 'image|mimes:jpg,jpeg,png,webp|max:2048',
 
         ];
     }
