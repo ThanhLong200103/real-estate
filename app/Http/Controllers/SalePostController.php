@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\SalePost\ImageRequest;
 use App\Http\Requests\SalePost\StoreSalePostRequest;
 use App\Models\SalePost;
-use App\Models\SalePostImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -13,167 +11,121 @@ use Illuminate\Support\Facades\Storage;
 
 class SalePostController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    // Trang chủ hiển thị tin đã được Admin duyệt
     public function index()
     {
-           if (Auth::check() && Auth::user()->role === 'Admin') {
-          $rentPosts = SalePost::where('status', 'pending')->with('images')->paginate(10);
-        }
-        else{
-            $rentPosts = SalePost::where('status', 'approved')
-            ->with('images')
+        $rentPosts = SalePost::with('images')
+            ->where('status', true)
+            ->latest()
             ->paginate(10);
 
-        }
-        //view
+        return view('home', compact('rentPosts'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+    // MỚI: Trang danh sách tin của riêng User đang đăng nhập
+    public function myPosts()
+    {
+        $myPosts = SalePost::with('images')
+            ->where('user_id', Auth::id())
+            ->latest()
+            ->paginate(10);
+
+        return view('user.sale-post.index', compact('myPosts'));
+    }
+
     public function create()
     {
-        if(Auth::check()){
-              return view('rent-posts.create');
-        }else{
-            // tra ve view dang nhap
-        }
+        return Auth::check() ? view('user.sale-post.create') : view('auth.login');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(StoreSalePostRequest $request)
     {
         DB::transaction(function () use ($request) {
+            $sale = SalePost::create([
+                'user_id'      => Auth::id(),
+                'title'        => $request->title,
+                'description'  => $request->description,
+                'price'        => $request->price,
+                'area'         => $request->area,
+                'address'      => $request->address,
+                'bedrooms'     => $request->bedrooms,
+                'bathrooms'    => $request->bathrooms,
+                'is_furnished' => $request->is_furnished,
+                'status'       => false, // Mặc định chờ duyệt
+            ]);
 
-        $sale = SalePost::create([
-            'user_id' =>Auth::id(),
-            'title' => $request->title,
-            'price' => $request->price,
-            'address' => $request->address,
-            'description' => $request->description,
-            'status' => 'pending',
-        ]);
-
-        if ($request->hasFile('image_url')) {
-
-            foreach ($request->file('image_url') as $image) {
-
-                $path = $image->store('posts', 'public');
-
-                $sale->images()->create([
-                    'image_url' => $path
-                ]);
+            if ($request->hasFile('image_url')) {
+                foreach ($request->file('image_url') as $file) {
+                    $fileName = time() . '-' . $file->getClientOriginalName();
+                    $path = $file->storeAs('posts', $fileName, 'public');
+                    $sale->images()->create(['image_url' => $path]);
+                }
             }
-        }
-    });
+        });
 
-   // tra ve view
+        return redirect()->route('user-sale-post-index')->with('success', 'Tin đang chờ duyệt!');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function show($id)
     {
-
-        if(Auth::check() && Auth::user()->role === 'Admin'){
-        $rentPosts = SalePost::where('status', 'pending')->with('images')->firstOrFail($id);
-        }
-        else{
-              $rentPosts = SalePost::where('status', 'approved')
-            ->with('images')
-            ->firstOrFail($id);
-        }
-        //tra ve view
+        // User có thể xem tin của mình ngay cả khi chưa duyệt
+        $rentPosts = SalePost::with('images')->findOrFail($id);
+        return view('user.sale-post.show', compact('rentPosts'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    public function edit($id)
     {
-        $rentPost = SalePost::findOrFail($id);
+        $rentPost = SalePost::with('images')->findOrFail($id);
 
-        // Kiểm tra chỉ user tạo mới được edit
-        if ($rentPost->user_id == Auth::id() ||  Auth::user()->role === 'Admin')
-           {
-            //view
-           }
-        else {
-             abort(403, 'Bạn không có quyền sửa tin này');
+        if ($rentPost->user_id == Auth::id()) {
+            return view('user.sale-post.edit', compact('rentPost'));
         }
+        abort(403);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
         $rentPost = SalePost::findOrFail($id);
 
-        // Kiểm tra authorization
-        if ($rentPost->user_id == Auth::id() ||  Auth::user()->role === 'Admin') {
-         DB::transaction(function () use ($request , $rentPost) {
+        if ($rentPost->user_id == Auth::id()) {
+            DB::transaction(function () use ($request, $rentPost) {
+                $rentPost->update([
+                    'title'       => $request->title,
+                    'price'       => $request->price,
+                    'address'     => $request->address,
+                    'description' => $request->description,
+                    'area'        => $request->area,
+                    'status'      => false, // Sửa tin thì phải duyệt lại
+                ]);
 
-           $rentPost->update([
-            'title' => $request->title,
-            'price' => $request->price,
-            'address' => $request->address,
-            'description' => $request->description,
-        ]);
+                if ($request->hasFile('image_url')) {
+                    foreach ($rentPost->images as $oldImage) {
+                        Storage::disk('public')->delete($oldImage->image_url);
+                        $oldImage->delete();
+                    }
+                    foreach ($request->file('image_url') as $image) {
+                        $path = $image->store('posts', 'public');
+                        $rentPost->images()->create(['image_url' => $path]);
+                    }
+                }
+            });
 
-        if ($request->hasFile('image_url')) {
-
-    foreach ($rentPost->images as $oldImage) {
-        Storage::disk('public')->delete($oldImage->image_url);
-        $oldImage->delete();
+            return redirect()->route('user-sale-post-index')->with('success', 'Cập nhật thành công!');
+        }
+        abort(403);
     }
 
-    foreach ($request->file('image_url') as $image) {
-        $path = $image->store('posts', 'public');
-        $rentPost->images()->create([
-            'image_url' => $path
-        ]);
-    }
-}
-
-         if(Auth::check()  && Auth::user()->role === 'Admin'){
-            $rentPost->update([
-                'status'=>$request->status
-            ]);
-        }
-    });
-
-
-     /// view
-        }
-        else{
-                abort(403, 'Bạn không có quyền sửa tin này');
-        }
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
-        $rentPost = SalePost::findOrFail($id);
+        $rentPost = SalePost::with('images')->findOrFail($id);
 
-        // Kiểm tra authorization
-        if ($rentPost->user_id == Auth::id() ||  Auth::user()->role === 'Admin') {
-
+        if ($rentPost->user_id == Auth::id()) {
+            foreach ($rentPost->images as $image) {
+                Storage::disk('public')->delete($image->image_url);
+            }
             $rentPost->delete();
-
-
-        return redirect()->route('rent-posts.index')->with('success', 'Xóa tin thành công');
-
-        }else{
-             abort(403, 'Bạn không có quyền xóa tin này');
+            return redirect()->route('user-sale-post-index')->with('success', 'Đã xóa tin đăng');
         }
+        abort(403);
     }
 }
-

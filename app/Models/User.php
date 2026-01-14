@@ -27,6 +27,11 @@ class User extends Authenticatable
         'phone_number'
     ];
 
+    public function isAdmin(): bool
+    {
+        return strtolower($this->role) === 'admin';
+    }
+
     /**
      * The attributes that should be hidden for serialization.
      *

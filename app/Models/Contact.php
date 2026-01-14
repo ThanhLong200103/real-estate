@@ -9,7 +9,8 @@ class Contact extends Model
      protected $table = 'contacts';
     protected $fillable = [
         'user_one_id',
-        'user_two_id'
+        'user_two_id',
+        'sale_post_id' // THÊM DÒNG NÀY
     ];
      public function userOne()
     {
@@ -24,5 +25,10 @@ class Contact extends Model
     public function messages()
     {
         return $this->hasMany(ContactMessage::class);
+    }
+    public function salePost()
+    {
+        // Giả sử bảng contacts có cột sale_post_id
+        return $this->belongsTo(SalePost::class, 'sale_post_id');
     }
 }
