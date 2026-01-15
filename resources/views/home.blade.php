@@ -1,142 +1,176 @@
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-<style>
-    :root {
-        --primary: #6c5ce7;
-        --primary-dark: #5a4bcf;
-        --secondary: #00cec9;
-        --dark: #2d3436;
-        --light-bg: #f8faff;
-        --white: #ffffff;
-        --grad: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
-    }
-
-    body { 
-        background-color: var(--light-bg); 
-        font-family: 'Plus Jakarta Sans', sans-serif; 
-        color: var(--dark);
-    }
-
-    /* --- HERO SECTION --- */
-    .hero-banner {
-        background: var(--dark);
-        background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1373&q=80');
-        background-size: cover;
-        background-position: center;
-        padding: 100px 0;
-        color: white;
-        text-align: center;
-        margin-bottom: -50px;
-    }
-
-    .search-box {
-        background: white;
-        padding: 30px;
-        border-radius: 20px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-        max-width: 900px;
-        margin: 0 auto;
-        position: relative;
-        z-index: 10;
-    }
-
-    /* --- NAV BUTTONS --- */
-    .nav-actions {
-        display: flex;
-        gap: 12px;
-        background: rgba(255,255,255,0.1);
-        padding: 8px;
-        border-radius: 50px;
-        backdrop-filter: blur(10px);
-    }
-
-    .btn-custom {
-        padding: 10px 20px;
-        border-radius: 50px;
-        font-weight: 600;
-        font-size: 14px;
-        transition: 0.3s;
-        border: none;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        text-decoration: none;
-    }
-
-    .btn-glass { background: rgba(255,255,255,0.2); color: white; }
-    .btn-glass:hover { background: white; color: var(--primary); }
-    .btn-primary-custom { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3); }
-    .btn-primary-custom:hover { background: var(--primary-dark); transform: translateY(-2px); }
-
-    /* --- PROPERTY CARDS --- */
-    .property-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 30px; margin-top: 80px; }
-
-    .post-card { 
-        background: var(--white); 
-        border-radius: 24px; 
-        overflow: hidden; 
-        transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-        border: 1px solid rgba(0,0,0,0.03);
-        height: 100%;
-    }
-
-    .post-card:hover { transform: translateY(-12px); box-shadow: 0 25px 50px rgba(0,0,0,0.1); }
-
-    .image-container { position: relative; height: 240px; overflow: hidden; }
-    .image-container img { width: 100%; height: 100%; object-fit: cover; }
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EstateHub - Trang chủ bất động sản</title>
     
-    .status-badge {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        background: rgba(0, 206, 201, 0.9);
-        color: white;
-        padding: 5px 15px;
-        border-radius: 50px;
-        font-size: 12px;
-        font-weight: 700;
-        text-transform: uppercase;
-    }
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    .price-overlay {
-        position: absolute;
-        bottom: 20px;
-        right: 20px;
-        background: white;
-        color: var(--primary);
-        padding: 8px 18px;
-        border-radius: 12px;
-        font-weight: 800;
-        font-size: 18px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --primary-dark: #5a4bcf;
+            --secondary: #00cec9;
+            --dark: #2d3436;
+            --light-bg: #f8faff;
+            --white: #ffffff;
+        }
 
-    .post-content { padding: 25px; }
-    .post-title { font-weight: 700; font-size: 19px; color: var(--dark); text-decoration: none; display: block; margin-bottom: 12px; line-height: 1.4; }
-    .post-title:hover { color: var(--primary); }
+        body { 
+            background-color: var(--light-bg); 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            color: var(--dark);
+        }
 
-    .location { color: #636e72; font-size: 14px; display: flex; align-items: center; gap: 6px; margin-bottom: 15px; }
-    
-    .amenities {
-        display: flex;
-        gap: 15px;
-        padding-top: 15px;
-        border-top: 1px solid #f1f1f1;
-        margin-top: 15px;
-    }
-    
-    .amenity-item { font-size: 13px; color: #636e72; display: flex; align-items: center; gap: 5px; }
-    .amenity-item i { color: var(--primary); opacity: 0.7; }
+        /* --- HERO SECTION --- */
+        .hero-banner {
+            background: var(--dark);
+            background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1560518883-ce09059eeffa?ixlib=rb-4.0.3&auto=format&fit=crop&w=1373&q=80');
+            background-size: cover;
+            background-position: center;
+            padding: 100px 0;
+            color: white;
+            text-align: center;
+            margin-bottom: -50px;
+        }
 
-    /* --- RESPONSIVE --- */
-    @media (max-width: 768px) {
-        .property-grid { grid-template-columns: 1fr; }
-        .hero-banner { padding: 60px 0; }
-        .nav-actions { overflow-x: auto; white-space: nowrap; border-radius: 15px; }
-    }
-</style>
+        .search-box {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* --- NAV BUTTONS --- */
+        .nav-actions {
+            display: flex;
+            gap: 12px;
+            background: rgba(255,255,255,0.1);
+            padding: 8px;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-custom {
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: 0.3s;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-glass { background: rgba(255,255,255,0.2); color: white; }
+        .btn-glass:hover { background: white; color: var(--primary); }
+        .btn-primary-custom { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3); }
+        .btn-primary-custom:hover { background: var(--primary-dark); transform: translateY(-2px); }
+
+        /* --- PROPERTY CARDS --- */
+        .property-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); 
+            gap: 30px; 
+            margin-top: 80px; 
+        }
+
+        .post-card { 
+            background: var(--white); 
+            border-radius: 24px; 
+            overflow: hidden; 
+            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            border: 1px solid rgba(0,0,0,0.03);
+            height: 100%;
+        }
+
+        .post-card:hover { transform: translateY(-12px); box-shadow: 0 25px 50px rgba(0,0,0,0.1); }
+
+        .image-container { position: relative; height: 240px; overflow: hidden; background-color: #eee; }
+        .image-container img { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
+        
+        .status-badge {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 206, 201, 0.9);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 50px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            z-index: 2;
+        }
+
+        .price-overlay {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            color: var(--primary);
+            padding: 8px 18px;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 18px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            z-index: 2;
+        }
+
+        .post-content { padding: 25px; }
+        .post-title { font-weight: 700; font-size: 19px; color: var(--dark); text-decoration: none; display: block; margin-bottom: 12px; line-height: 1.4; }
+        .post-title:hover { color: var(--primary); }
+
+        .location { color: #636e72; font-size: 14px; display: flex; align-items: center; gap: 6px; margin-bottom: 15px; }
+        
+        .amenities {
+            display: flex;
+            gap: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #f1f1f1;
+            margin-top: 15px;
+        }
+        
+        .amenity-item { font-size: 13px; color: #636e72; display: flex; align-items: center; gap: 5px; }
+        .amenity-item i { color: var(--primary); opacity: 0.7; }
+
+        @media (max-width: 768px) {
+            .property-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+@php
+    /**
+     * Hàm logic xử lý đường dẫn ảnh đồng nhất
+     * Ưu tiên 1: URL tuyệt đối (http)
+     * Ưu tiên 2: Ảnh Seeder (bắt đầu bằng images/) nằm trong thư mục public
+     * Ưu tiên 3: Ảnh Storage (User post)
+     */
+    $convertImage = function($path) {
+        if (!$path) return 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80';
+        
+        if (filter_var($path, FILTER_VALIDATE_URL)) {
+            return $path;
+        }
+        
+        if (str_starts_with($path, 'images/')) {
+            return asset($path);
+        }
+        
+        return asset('storage/' . $path);
+    };
+@endphp
 
 <header class="hero-banner">
     <div class="container">
@@ -184,15 +218,13 @@
                     <option selected>Loại hình</option>
                     <option>Căn hộ</option>
                     <option>Nhà phố</option>
-                    <option>Biệt thự</option>
                 </select>
             </div>
             <div class="col-md-3">
                 <select class="form-select border-0 shadow-none fw-600">
                     <option selected>Mức giá</option>
                     <option>Dưới 2 tỷ</option>
-                    <option>2 - 5 tỷ</option>
-                    <option>Trên 5 tỷ</option>
+                    <option>Trên 2 tỷ</option>
                 </select>
             </div>
             <div class="col-md-2">
@@ -206,28 +238,40 @@
         <article class="post-card shadow-sm">
             <div class="image-container">
                 <span class="status-badge">Mới đăng</span>
-                @if($post->images && $post->images->isNotEmpty())
-                    <img src="{{ asset('storage/' . $post->images->first()->image_url) }}" alt="Property">
-                @else
-                    <img src="https://images.unsplash.com/photo-1570129477492-45c003edd2be?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80" alt="Default">
-                @endif
+                
+                @php
+                    $imgPath = ($post->images && $post->images->isNotEmpty()) 
+                               ? $post->images->first()->image_url 
+                               : null;
+                @endphp
+
+                <img src="{{ $convertImage($imgPath) }}" 
+                     alt="{{ $post->title }}"
+                     onerror="this.src='https://images.unsplash.com/photo-1570129477492-45c003edd2be?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80'">
+                
                 <div class="price-overlay">
-                    {{ number_format($post->price / 1000000, 1) }} Tỷ
+                    @if($post->price >= 1000000000)
+                        {{ number_format($post->price / 1000000000, 1) }} Tỷ
+                    @else
+                        {{ number_format($post->price / 1000000, 0) }} triệu
+                    @endif
                 </div>
             </div>
             
             <div class="post-content">
-                <a href="{{ route('create-sale-show', $post->id) }}" class="post-title">{{ Str::limit($post->title, 60) }}</a>
+                <a href="{{ route('create-sale-show', $post->id) }}" class="post-title text-truncate">
+                    {{ $post->title }}
+                </a>
                 <div class="location">
-                    <i class="fas fa-map-marker-alt text-danger"></i> {{ $post->address ?? 'Hồ Chí Minh' }}
+                    <i class="fas fa-map-marker-alt text-danger"></i> {{ Str::limit($post->address, 35) ?? 'Hồ Chí Minh' }}
                 </div>
                 
                 <div class="amenities">
                     <div class="amenity-item">
-                        <i class="fas fa-bed"></i> {{ $post->bedrooms ?? 2 }} PN
+                        <i class="fas fa-bed"></i> {{ $post->bedrooms ?? 0 }} PN
                     </div>
                     <div class="amenity-item">
-                        <i class="fas fa-bath"></i> {{ $post->bathrooms ?? 1 }} PT
+                        <i class="fas fa-bath"></i> {{ $post->bathrooms ?? 0 }} PT
                     </div>
                     <div class="amenity-item">
                         <i class="fas fa-ruler-combined"></i> {{ $post->area ?? 0 }} m²
@@ -246,9 +290,12 @@
         <div class="text-center py-5 bg-white rounded-5 shadow-sm" style="grid-column: 1/-1">
             <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" width="120" class="mb-4 opacity-50">
             <h3 class="text-muted fw-bold">Rất tiếc, chưa có bài đăng nào!</h3>
-            <p class="text-muted">Hãy quay lại sau hoặc thử đăng tin của chính bạn.</p>
             <a href="{{ route('create-sale-post') }}" class="btn btn-primary-custom mt-2 px-5 py-3">Bắt đầu đăng tin</a>
         </div>
         @endforelse
     </div>
 </main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

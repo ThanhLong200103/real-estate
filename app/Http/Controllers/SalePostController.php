@@ -68,8 +68,19 @@ class SalePostController extends Controller
 
     public function show($id)
     {
-        // User có thể xem tin của mình ngay cả khi chưa duyệt
         $rentPosts = SalePost::with('images')->findOrFail($id);
+
+        // KIỂM TRA QUYỀN TRUY CẬP
+        if (!$rentPosts->status) {
+            $isAdmin = Auth::check() && strcasecmp(Auth::user()->role, 'admin') === 0;
+            $isOwner = Auth::check() && $rentPosts->user_id == Auth::id();
+
+            // Nếu không phải admin và cũng không phải chủ tin -> Giấu tin đi
+            if (!$isAdmin && !$isOwner) {
+                abort(404, 'Bài viết này đang chờ duyệt và không thể hiển thị công khai.');
+            }
+        }
+
         return view('user.sale-post.show', compact('rentPosts'));
     }
 
@@ -77,10 +88,12 @@ class SalePostController extends Controller
     {
         $rentPost = SalePost::with('images')->findOrFail($id);
 
+        // Kiểm tra quyền sở hữu bài đăng
         if ($rentPost->user_id == Auth::id()) {
             return view('user.sale-post.edit', compact('rentPost'));
         }
-        abort(403);
+
+        abort(403, 'Bạn không có quyền chỉnh sửa bài đăng này.');
     }
 
     public function update(Request $request, string $id)

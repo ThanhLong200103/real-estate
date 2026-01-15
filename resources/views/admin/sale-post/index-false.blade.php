@@ -1,105 +1,124 @@
 @extends('admin.layout')
 
 @section('content')
+<style>
+    .price-text-pending { color: #f59e0b; font-weight: 700; font-size: 1.05rem; }
+    .user-avatar { width: 32px; height: 32px; font-size: 11px; font-weight: bold; background-color: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+    /* Khung ảnh đồng nhất, chống méo */
+    .thumb-wrapper { width: 80px; height: 60px; overflow: hidden; border-radius: 10px; background: #f1f5f9; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; position: relative; }
+    .thumb-img { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; }
+    .thumb-wrapper:hover .thumb-img { transform: scale(1.1); }
+    .empty-state-icon { font-size: 4rem; color: #e2e8f0; margin-bottom: 1rem; }
+</style>
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h2 class="page-title mb-0"><i class="fas fa-user-check header-icon"></i>Duyệt Bất Động Sản</h2>
-        <p class="text-muted small mb-0">Yêu cầu đăng tin đang chờ xử lý từ người dùng</p>
+        <h2 class="fw-800 mb-1 text-dark" style="letter-spacing: -1px;">Danh sách chờ duyệt</h2>
+        <p class="text-muted small mb-0"><i class="fas fa-clock me-1 text-warning"></i> Các bài đăng bất động sản đang đợi quản trị viên kiểm tra nội dung.</p>
     </div>
-    <a href="{{ route('create-sale-post-admin') }}" class="btn btn-primary px-4 py-2 shadow-sm" style="border-radius: 10px;">
-        <i class="fas fa-plus me-2"></i>Tạo bài viết mới
+    <a href="{{ route('create-sale-post-admin') }}" 
+       class="btn btn-primary px-4 shadow-sm fw-bold d-flex align-items-center" 
+       style="border-radius: 12px; height: 45px;">
+        <i class="fas fa-plus me-2"></i>Tạo bài mới
     </a>
 </div>
 
-@if($rentPosts->count() > 0)
-    <div class="card card-table shadow-sm">
+<div class="card border-0 shadow-sm" style="border-radius: 20px; overflow: hidden;">
+    <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead>
+                <thead class="bg-light">
                     <tr>
-                        <th class="text-center">ID</th>
-                        <th>Thông tin bài đăng</th>
-                        <th>Giá & Diện tích</th>
-                        <th>Thông số</th>
-                        <th>Địa chỉ</th>
-                        <th>Ảnh</th>
-                        <th class="text-center">Quyết định</th>
+                        <th class="ps-4 py-4 text-muted fw-semibold" style="font-size: 0.75rem; text-transform: uppercase;">Hình ảnh</th>
+                        <th class="py-4 text-muted fw-semibold" style="font-size: 0.75rem; text-transform: uppercase;">Tiêu đề & Địa chỉ</th>
+                        <th class="py-4 text-muted fw-semibold" style="font-size: 0.75rem; text-transform: uppercase;">Giá & Diện tích</th>
+                        <th class="py-4 text-muted fw-semibold" style="font-size: 0.75rem; text-transform: uppercase;">Người đăng</th>
+                        <th class="py-4 text-muted fw-semibold text-center" style="font-size: 0.75rem; text-transform: uppercase;">Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($rentPosts as $post)
-                        <tr>
-                            <td class="text-center text-muted fw-bold">#{{ $post->id }}</td>
-                            <td style="max-width: 250px;">
-                                <div class="fw-bold text-dark mb-1">{{ $post->title }}</div>
-                                <div class="small text-muted">
-                                    <i class="fas fa-user-circle me-1"></i>{{ $post->user->name ?? 'Khách' }}
+                    @forelse($rentPosts as $post)
+                    <tr>
+                        <td class="ps-4">
+                            <div class="thumb-wrapper shadow-sm">
+                                @php 
+                                    $firstImage = $post->images->first()?->image_url;
+                                    // Logic fallback: Ưu tiên link chuẩn -> link storage -> ảnh mặc định nếu null
+                                    $src = $firstImage 
+                                           ? (str_starts_with($firstImage, 'http') ? $firstImage : asset('storage/' . ltrim($firstImage, '/')))
+                                           : 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=200&auto=format&fit=crop';
+                                @endphp
+
+                                <img src="{{ $src }}" 
+                                     class="thumb-img"
+                                     referrerpolicy="no-referrer"
+                                     onerror="this.src='https://placehold.co/600x400?text=BDS+Cho+Duyet'">
+                            </div>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark mb-1 text-truncate" style="max-width: 250px;">{{ $post->title }}</div>
+                            <small class="text-muted d-flex align-items-center">
+                                <i class="fas fa-map-marker-alt me-1 text-danger"></i>
+                                <span class="text-truncate" style="max-width: 200px;">{{ $post->address }}</span>
+                            </small>
+                        </td>
+                        <td>
+                            <div class="price-text-pending">{{ number_format($post->price) }} đ</div>
+                            <div class="badge bg-light text-dark fw-normal border mt-1" style="font-size: 0.7rem;">
+                                <i class="fas fa-expand-arrows-alt me-1 opacity-50"></i>{{ $post->area }} m²
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center me-2">
+                                    {{ strtoupper(substr($post->user->name ?? 'A', 0, 1)) }}
                                 </div>
-                            </td>
-                            <td>
-                                <div class="price-text">{{ number_format($post->price) }} đ</div>
-                                <span class="area-badge">{{ $post->area }} m²</span>
-                            </td>
-                            <td class="property-spec">
-                                <div class="mb-1"><i class="fas fa-bed"></i> {{ $post->bedrooms }} PN</div>
-                                <div><i class="fas fa-bath"></i> {{ $post->bathrooms }} PT</div>
-                            </td>
-                            <td>
-                                <span class="small text-muted" title="{{ $post->address }}">
-                                    <i class="fas fa-map-marker-alt text-danger me-1"></i>{{ Str::limit($post->address, 25) }}
-                                </span>
-                            </td>
-                            <td>
-                                @php $firstImage = $post->images->first(); @endphp
-                                @if($firstImage)
-                                    <img src="{{ asset('storage/' . $firstImage->image_url) }}" 
-                                         class="rounded shadow-sm border" style="width:60px; height:45px; object-fit:cover;">
-                                @else
-                                    <div class="bg-light rounded border text-center" style="width:60px; height:45px; line-height:45px;">
-                                        <i class="fas fa-image text-muted"></i>
-                                    </div>
-                                @endif
-                            </td>
-                            <td class="text-center">
-                                <div class="d-flex justify-content-center gap-1">
-                                    {{-- Nút Duyệt --}}
-                                    <form action="{{ route('approve-sale-post-admin', $post->id) }}" method="POST">
-                                        @csrf @method('PATCH')
-                                        <button type="submit" class="btn btn-sm btn-approve px-3 py-2" onclick="return confirm('Duyệt bài đăng này?');">
-                                            <i class="fas fa-check me-1"></i> Duyệt
-                                        </button>
+                                <div>
+                                    <div class="small fw-bold text-dark">{{ $post->user->name ?? 'Admin' }}</div>
+                                    <div class="text-muted" style="font-size: 10px;">{{ $post->created_at->diffForHumans() }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="pe-4">
+                            <div class="d-flex justify-content-center gap-2">
+                                {{-- Nút Duyệt --}}
+                                <form action="{{ route('approve-sale-post-admin', $post->id) }}" method="POST" up-submit up-target=".main-content, #admin-sidebar-nav">
+                                    @csrf @method('PATCH')
+                                    <button type="submit" class="btn btn-sm btn-success px-3 fw-bold shadow-sm" style="border-radius: 8px;" onclick="return confirm('Bạn có chắc chắn muốn phê duyệt tin này?')">
+                                        <i class="fas fa-check-circle me-1"></i> DUYỆT
+                                    </button>
+                                </form>
+
+                                {{-- Nút Xem/Sửa/Xóa --}}
+                                <div class="btn-group shadow-sm border rounded-3 overflow-hidden">
+                                    <a href="{{ route('show-sale-post-admin', $post->id) }}" class="btn btn-sm btn-white bg-white" up-follow up-target=".main-content"><i class="fas fa-eye text-primary"></i></a>
+                                    <a href="{{ route('edit-sale-post-admin', $post->id) }}" class="btn btn-sm btn-white bg-white" up-follow up-target=".main-content"><i class="fas fa-pen-nib text-warning"></i></a>
+                                    <form action="{{ route('destroy-sale-post-admin', $post->id) }}" method="POST" onsubmit="return confirm('Xác nhận xóa vĩnh viễn tin đăng này?')" up-submit up-target=".main-content, #admin-sidebar-nav">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-white bg-white"><i class="fas fa-trash-alt text-danger"></i></button>
                                     </form>
-                                    
-                                    {{-- Nhóm hành động phụ --}}
-                                    <div class="btn-group btn-action-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
-                                        <a href="{{ route('show-sale-post-admin', $post->id) }}" class="btn btn-sm text-info" title="Xem chi tiết"><i class="fas fa-eye"></i></a>
-                                        <a href="{{ route('edit-sale-post-admin', $post->id) }}" class="btn btn-sm text-warning" title="Sửa"><i class="fas fa-edit"></i></a>
-                                        <form action="{{ route('destroy-sale-post-admin', $post->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Xóa vĩnh viễn bài này?');">
-                                            @csrf @method('DELETE')
-                                            <button type="submit" class="btn btn-sm text-danger" title="Xóa"><i class="fas fa-trash-alt"></i></button>
-                                        </form>
-                                    </div>
                                 </div>
-                            </td>
-                        </tr>
-                    @endforeach
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <div class="empty-state-icon">
+                                <i class="fas fa-clipboard-check"></i>
+                            </div>
+                            <h5 class="text-dark fw-bold">Tuyệt vời! Sạch bóng tin chờ.</h5>
+                            <p class="text-muted small">Tất cả các bài đăng đã được xử lý xong.</p>
+                        </td>
+                    </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
-        <div class="card-footer bg-white border-0 py-3">
-            {{ $rentPosts->links() }}
-        </div>
     </div>
-@else
-    <div class="empty-state text-center shadow-sm">
-        <div class="mb-4">
-            <i class="fas fa-check-double fa-4x" style="color: #10b981; opacity: 0.5;"></i>
-        </div>
-        <h4 class="fw-bold">Hệ thống đã sạch bài chờ!</h4>
-        <p class="text-muted">Hiện tại không có yêu cầu phê duyệt bất động sản nào.</p>
-        <a href="{{ route('index-true-sale-post-admin') }}" class="btn btn-outline-primary btn-sm mt-2">
-            Xem bài đã duyệt
-        </a>
-    </div>
-@endif
+</div>
+
+<div class="mt-4 d-flex justify-content-center" up-nav>
+    {{ $rentPosts->appends(request()->query())->links('pagination::bootstrap-5') }}
+</div>
 @endsection

@@ -3,146 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Real Estate</title>
-    
-    <script src="https://cdn.jsdelivr.net/npm/unpoly@3.0.0-beta.5/unpoly.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/unpoly@3.0.0-beta.5/unpoly.min.css">
-
+    <title>Admin Real Estate</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
+    <script src="https://unpkg.com/unpoly@3.5.0/unpoly.min.js"></script>
     <style>
-        :root {
-            --sidebar-bg: #1e293b;
-            --sidebar-hover: #334155;
-            --primary-color: #4f46e5;
-            --success-color: #10b981;
-            --bg-body: #f8fafc;
-            --text-muted: #94a3b8;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-body);
-            color: #1e293b;
-            overflow-x: hidden;
-        }
-
-        /* Thanh progress chạy trên đầu trang giống Youtube/Facebook khi chuyển trang */
-        .up-progress-bar { background-color: var(--primary-color) !important; height: 3px !important; }
-
-        .sidebar {
-            background-color: var(--sidebar-bg);
-            box-shadow: 4px 0 10px rgba(0,0,0,0.05);
-            min-height: 100vh;
-            position: fixed;
-            width: inherit;
-            z-index: 100;
-        }
-
-        .sidebar h4 {
-            letter-spacing: 2px;
-            font-weight: 700;
-            color: #f1f5f9;
-            border-bottom: 1px solid #334155;
-            padding: 25px 0;
-            margin: 0 15px 20px 15px;
-        }
-
-        .sidebar .nav-link {
-            border-radius: 8px;
-            margin: 0 15px 8px 15px;
-            padding: 12px 18px;
-            transition: all 0.3s;
-            font-weight: 500;
-            color: var(--text-muted) !important;
-            display: flex;
+        :root { --sidebar-bg: #1e293b; --sidebar-hover: #334155; --primary-color: #4f46e5; --bg-body: #f8fafc; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); color: #1e293b; margin: 0; }
+        
+        .sidebar { background-color: var(--sidebar-bg); position: fixed; height: 100vh; width: 16.666667%; z-index: 1000; transition: all 0.3s; }
+        
+        .sidebar .nav-link { 
+            color: #94a3b8 !important; 
+            border-radius: 8px; 
+            padding: 12px 15px; 
+            margin: 5px 0;
+            transition: 0.2s; 
+            display: flex; 
             align-items: center;
+            text-decoration: none;
+            background: transparent !important;
         }
 
-        .sidebar .nav-link:hover {
-            background-color: var(--sidebar-hover);
-            color: #fff !important;
+        .sidebar .nav-link:hover:not(.active) { 
+            background-color: var(--sidebar-hover) !important; 
+            color: #fff !important; 
         }
 
-        /* Unpoly sẽ tự động thêm class .up-current cho link đang ở trang hiện tại */
-        .sidebar .nav-link.active, .sidebar .nav-link.up-current {
-            background-color: var(--primary-color) !important;
-            color: #fff !important;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        .sidebar .nav-link.active { 
+            background-color: var(--primary-color) !important; 
+            color: #fff !important; 
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); 
+            cursor: default;
         }
 
-        .main-wrapper {
-            margin-left: 16.666667%;
-            padding: 30px;
-            width: 83.333333%;
-        }
-
-        .pending-badge {
-            font-size: 0.7rem; padding: 4px 8px; background-color: #ef4444; color: white; border-radius: 20px; margin-left: auto;
-        }
+        .main-content { margin-left: 16.666667%; min-height: 100vh; background: var(--bg-body); }
+        
+        /* Hiệu ứng loading bar của Unpoly */
+        .up-progress-bar { background: var(--primary-color); height: 3px; }
     </style>
 </head>
 <body>
 
 <div class="container-fluid p-0">
-    <div class="row g-0">
-        <div class="col-md-2 sidebar d-none d-md-block">
-            <h4 class="text-center">REAL ESTATE</h4>
-            <div class="nav flex-column mt-4" up-nav>
+    <div class="d-flex">
+        <div class="sidebar p-3 text-white" id="admin-sidebar">
+            <h4 class="text-center mt-3 mb-4 fw-bold border-bottom pb-3 text-uppercase tracking-wider">Real Estate</h4>
+            
+            <div class="nav flex-column nav-pills" id="admin-sidebar-nav">
+                
+                {{-- Link Tin Tức --}}
                 <a href="{{ route('index-news-admin') }}" 
-                   class="nav-link" 
-                   up-follow up-target=".main-wrapper">
+                   class="nav-link {{ Route::is('index-news-admin*') ? 'active' : '' }}" 
+                   up-follow 
+                   up-target=".main-content, #admin-sidebar-nav">
                     <i class="fas fa-newspaper me-3"></i> 
-                    <span>Quản lý Tin tức</span>
+                    <span>Tin tức</span>
                 </a>
 
+                {{-- Link Chờ Duyệt --}}
                 <a href="{{ route('index-false-sale-post-admin') }}" 
-                   class="nav-link" 
-                   up-follow up-target=".main-wrapper">
-                    <i class="fas fa-clock me-3"></i> 
-                    <span>Chờ duyệt bài</span>
+                   class="nav-link d-flex justify-content-between align-items-center {{ Route::is('index-false-sale-post-admin*') ? 'active' : '' }}" 
+                   up-follow 
+                   up-target=".main-content, #admin-sidebar-nav">
+                    <div>
+                        <i class="fas fa-clock me-3"></i> 
+                        <span>Chờ duyệt</span>
+                    </div>
                     @if(isset($pendingPostsCount) && $pendingPostsCount > 0)
-                        <span class="pending-badge">{{ $pendingPostsCount }}</span>
+                        <span class="badge bg-danger rounded-pill">{{ $pendingPostsCount }}</span>
                     @endif
                 </a>
 
+                {{-- Link Đã Duyệt --}}
                 <a href="{{ route('index-true-sale-post-admin') }}" 
-                   class="nav-link" 
-                   up-follow up-target=".main-wrapper">
+                   class="nav-link {{ Route::is('index-true-sale-post-admin*') ? 'active' : '' }}" 
+                   up-follow 
+                   up-target=".main-content, #admin-sidebar-nav">
                     <i class="fas fa-check-circle me-3"></i> 
-                    <span>Bài đã duyệt</span>
+                    <span>Đã duyệt</span>
                 </a>
 
-                <div style="margin-top: 50px;">
-                    <hr class="mx-3 opacity-10" style="background-color: #fff;">
+                <div class="mt-auto pt-4 border-top" style="position: absolute; bottom: 20px; width: 85%;">
                     <form action="{{ route('logout') }}" method="POST">
                         @csrf
-                        <button type="submit" class="nav-link border-0 bg-transparent w-100 text-start">
-                            <i class="fas fa-sign-out-alt text-danger me-3"></i> 
-                            <span class="text-danger">Đăng xuất</span>
+                        <button type="submit" class="btn btn-outline-danger btn-sm w-100 border-0 text-start d-flex align-items-center">
+                            <i class="fas fa-sign-out-alt me-2"></i> Đăng xuất
                         </button>
                     </form>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-10 main-wrapper">
-            @if(session('success'))
-                <div class="alert alert-success d-flex align-items-center mb-4 fade show" role="alert">
-                    <i class="fas fa-check-circle me-3 fa-lg"></i>
-                    <div>{{ session('success') }}</div>
-                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            @endif
-
+        <div class="main-content p-4 w-100">
             @yield('content')
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    /**
+     * Cấu hình Unpoly toàn cục
+     */
+    up.compiler('.nav-link', function(element) {
+        // Tự động thêm up-follow cho tất cả link menu nếu chưa có
+        if (!element.hasAttribute('up-follow')) {
+            element.setAttribute('up-follow', '');
+        }
+    });
+
+    // Lắng nghe sự kiện chuyển trang thành công để đảm bảo thanh URL luôn đúng
+    up.on('up:link:follow', (event) => {
+        // Ép Unpoly cập nhật lịch sử trình duyệt (thanh URL)
+        event.renderOptions.history = true;
+    });
+
+    // Debug: In ra console nếu Unpoly lỗi
+    up.on('up:request:error', (event) => {
+        console.error('Unpoly Request Failed:', event.request.url);
+    });
+</script>
 
 </body>
 </html>

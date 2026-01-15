@@ -16,27 +16,29 @@ class SalePostController extends Controller
     public function index_true()
     {
         $query = SalePost::with('images')->where('status', true);
-
-        // Chỉ Admin mới xem được toàn bộ, nếu không phải Admin thì chỉ xem bài của mình
         if (strcasecmp(Auth::user()->role, 'admin') !== 0) {
             $query->where('user_id', Auth::id());
         }
 
         $rentPosts = $query->latest()->paginate(10);
-        return view('admin.sale-post.index-true', compact('rentPosts'));
+        // Bổ sung dòng này
+        $pendingPostsCount = SalePost::where('status', false)->count();
+
+        return view('admin.sale-post.index-true', compact('rentPosts', 'pendingPostsCount'));
     }
 
     public function index_false()
     {
         $query = SalePost::with('images')->where('status', false);
-
-        // ĐỒNG BỘ: Kiểm tra role không phân biệt hoa thường để Admin thấy được tin chờ duyệt
         if (strcasecmp(Auth::user()->role, 'admin') !== 0) {
             $query->where('user_id', Auth::id());
         }
 
         $rentPosts = $query->latest()->paginate(10);
-        return view('admin.sale-post.index-false', compact('rentPosts'));
+        // Bổ sung dòng này
+        $pendingPostsCount = $rentPosts->total();
+
+        return view('admin.sale-post.index-false', compact('rentPosts', 'pendingPostsCount'));
     }
 
     public function approve($id)
@@ -93,6 +95,7 @@ class SalePostController extends Controller
     {
         $post = SalePost::with('images')->findOrFail($id);
 
+        // Admin hoặc Chủ sở hữu đều xem được trong trang quản trị
         if (strcasecmp(Auth::user()->role, 'admin') === 0 || $post->user_id === Auth::id()) {
             return view('admin.sale-post.show', compact('post'));
         }
@@ -104,6 +107,7 @@ class SalePostController extends Controller
     {
         $rentPost = SalePost::with('images')->findOrFail($id);
 
+        // Kiểm tra quyền
         if (strcasecmp(Auth::user()->role, 'admin') === 0 || $rentPost->user_id === Auth::id()) {
             return view('admin.sale-post.edit', compact('rentPost'));
         }

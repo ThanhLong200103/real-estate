@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -32,10 +33,14 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('contacts', function (Blueprint $table) {
+            // Tắt kiểm tra khóa ngoại để tránh lỗi 1553
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
             $table->dropUnique(['user_one_id', 'user_two_id', 'sale_post_id']);
             $table->dropForeign(['sale_post_id']);
             $table->dropColumn('sale_post_id');
-            $table->unique(['user_one_id', 'user_two_id']);
+
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
         });
     }
 };

@@ -19,7 +19,7 @@ return new class extends Migration
 
             $table->string('title', 200);
             $table->text('description');
-            $table->decimal('price', 12, 2);
+            $table->decimal('price', 15, 2); // Cho phép tối đa 13 chữ số phần nguyên (hàng chục nghìn tỷ)
             $table->float('area');
             $table->string('address');
             $table->integer('bedrooms');

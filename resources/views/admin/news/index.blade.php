@@ -2,35 +2,14 @@
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="page-title">Bảng điều khiển</h2>
+    <h2 class="fw-bold">Quản lý Tin tức</h2>
     <span class="text-muted"><i class="far fa-calendar-alt me-2"></i>{{ date('d/m/Y') }}</span>
-</div>
-
-<div class="row mb-4">
-    <div class="col-md-4">
-        <div class="card card-stats bg-white shadow-sm border-start border-primary border-5">
-            <div class="card-body position-relative">
-                <h6 class="text-muted text-uppercase small fw-bold">Tổng Tin Tức</h6>
-                <h3 class="fw-bold mb-0">{{ $rentPosts->total() }}</h3>
-                <i class="fas fa-newspaper stat-icon text-primary"></i>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card card-stats bg-white shadow-sm border-start border-warning border-5">
-            <div class="card-body position-relative">
-                <h6 class="text-muted text-uppercase small fw-bold">Chờ duyệt (BĐS)</h6>
-                <h3 class="fw-bold mb-0">{{ $pendingPostsCount ?? 0 }}</h3>
-                <i class="fas fa-hourglass-half stat-icon text-warning"></i>
-            </div>
-        </div>
-    </div>
 </div>
 
 <div class="card card-table shadow-sm">
     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
         <h5 class="mb-0 fw-bold">Danh sách bài viết tin tức</h5>
-        <a href="{{ route('create-news-admin') }}" class="btn btn-success btn-sm px-3">
+        <a href="{{ route('create-news-admin') }}" class="btn btn-success btn-sm px-3" up-follow up-target=".main-content">
             <i class="fas fa-plus me-2"></i>Thêm bài viết
         </a>
     </div>
@@ -43,7 +22,7 @@
                         <th>Nội dung bài viết</th>
                         <th>Trạng thái</th>
                         <th>Hình ảnh</th>
-                        <th class="text-end">Hành động</th>
+                        <th class="text-end pe-4">Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -55,48 +34,36 @@
                             <small class="text-muted">Ngày đăng: {{ $post->created_at->format('d/m/Y') }}</small>
                         </td>
                         <td>
-                            @if($post->status)
-                                <span class="badge bg-success">Đã xuất bản</span>
-                            @else
-                                <span class="badge bg-warning text-dark">Bản nháp</span>
-                            @endif
+                            <span class="badge {{ $post->status ? 'bg-success' : 'bg-warning text-dark' }}">
+                                {{ $post->status ? 'Đã xuất bản' : 'Bản nháp' }}
+                            </span>
                         </td>
                         <td>
                             @php $firstImage = $post->images->first(); @endphp
                             @if($firstImage)
-                                <img src="{{ asset('storage/' . $firstImage->image_url) }}" 
+                                <img src="{{ str_starts_with($firstImage->image_url, 'http') ? $firstImage->image_url : asset('storage/' . $firstImage->image_url) }}" 
                                      class="rounded shadow-sm" style="width:60px; height:40px; object-fit:cover;">
                             @else
-                                <div class="bg-light rounded text-center" style="width:60px; height:40px; line-height:40px;">
-                                    <i class="fas fa-image text-muted"></i>
-                                </div>
+                                <div class="bg-light rounded text-center" style="width:60px; height:40px; line-height:40px;"><i class="fas fa-image text-muted"></i></div>
                             @endif
                         </td>
-                        <td class="text-end">
-                            <div class="btn-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
-                                <a href="{{ route('show-news-admin', $post->id) }}" class="btn btn-sm btn-action text-info" title="Xem"><i class="fas fa-eye"></i></a>
-                                <a href="{{ route('edit-news-admin', $post->id) }}" class="btn btn-sm btn-action text-warning" title="Sửa"><i class="fas fa-edit"></i></a>
-                                <form action="{{ route('destroy-news-admin', $post->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Xác nhận xóa bài viết này?');">
+                        <td class="text-end pe-4">
+                            <div class="btn-group shadow-sm">
+                                <a href="{{ route('show-news-admin', $post->id) }}" class="btn btn-sm btn-action text-info" up-follow up-target=".main-content"><i class="fas fa-eye"></i></a>
+                                <a href="{{ route('edit-news-admin', $post->id) }}" class="btn btn-sm btn-action text-warning" up-follow up-target=".main-content"><i class="fas fa-edit"></i></a>
+                                <form action="{{ route('destroy-news-admin', $post->id) }}" method="POST" class="d-inline">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-action text-danger" title="Xóa"><i class="fas fa-trash-alt"></i></button>
+                                    <button class="btn btn-sm btn-action text-danger" onclick="return confirm('Xóa?')"><i class="fas fa-trash-alt"></i></button>
                                 </form>
                             </div>
                         </td>
                     </tr>
                     @empty
-                    <tr>
-                        <td colspan="5" class="text-center py-5 text-muted">
-                            <i class="fas fa-folder-open fa-3x mb-3 d-block opacity-25"></i>
-                            Chưa có bài viết nào được tìm thấy.
-                        </td>
-                    </tr>
+                    <tr><td colspan="5" class="text-center py-5">Chưa có bài viết nào.</td></tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
-    </div>
-    <div class="card-footer bg-white border-0 py-3">
-        {{ $rentPosts->links() }}
     </div>
 </div>
 @endsection

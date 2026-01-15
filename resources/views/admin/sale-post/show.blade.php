@@ -1,191 +1,196 @@
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+@extends('admin.layout')
 
+@section('content')
+@php
+    // Tự động bắt biến từ Controller bất kể tên gì
+    $item = $post ?? $salePost ?? $rentPost ?? $item ?? null;
+@endphp
+
+@if(!$item)
+    <div class="container-fluid py-5 text-center">
+        <div class="display-1 text-muted opacity-25 mb-4"><i class="fas fa-search"></i></div>
+        <h4 class="fw-bold">Không tìm thấy dữ liệu bài đăng</h4>
+        <a href="{{ url()->previous() }}" class="btn btn-primary rounded-pill px-4">Quay lại danh sách</a>
+    </div>
+@else
 <style>
-    :root {
-        --sidebar-bg: #1e293b;
-        --sidebar-hover: #334155;
-        --primary-color: #4f46e5;
-        --bg-body: #f8fafc;
-    }
-
-    body {
-        font-family: 'Inter', sans-serif;
-        background-color: var(--bg-body);
-        color: #1e293b;
-    }
-
-    /* --- SIDEBAR --- */
-    .sidebar { background-color: var(--sidebar-bg); box-shadow: 4px 0 10px rgba(0,0,0,0.05); }
-    .sidebar h4 { letter-spacing: 2px; font-weight: 700; color: #f1f5f9; border-bottom: 1px solid #334155; padding-bottom: 20px; }
-    .sidebar .nav-link { border-radius: 8px; margin-bottom: 5px; padding: 12px 15px; transition: 0.2s; font-weight: 500; color: #94a3b8 !important; display: flex; align-items: center; }
-    .sidebar .nav-link:hover { background-color: var(--sidebar-hover); color: #fff !important; }
-    .sidebar .nav-link.active { background-color: var(--primary-color) !important; color: #fff !important; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
-
-    /* --- DETAIL STYLING --- */
-    .detail-card { border: none; border-radius: 16px; overflow: hidden; background: white; }
-    .table-detail th { background-color: #f8fafc; color: #64748b; font-weight: 600; width: 35%; border-left: 4px solid #e2e8f0; }
-    .table-detail td { font-weight: 500; color: #1e293b; }
-    
-    .price-large { font-size: 1.5rem; font-weight: 800; color: #ef4444; letter-spacing: -0.5px; }
-    
-    .description-box { background-color: #f1f5f9; border-radius: 12px; padding: 20px; line-height: 1.7; color: #334155; border-left: 5px solid var(--primary-color); }
-    
-    .image-preview { position: relative; border-radius: 12px; overflow: hidden; transition: 0.3s; height: 180px; }
-    .image-preview img { width: 100%; height: 100%; object-fit: cover; }
-    .image-preview:hover { transform: scale(1.02); }
-    
-    .badge-status { padding: 8px 16px; border-radius: 50px; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; }
-
-    .action-bar { background-color: #fff; border-top: 1px solid #f1f5f9; }
+    .detail-card { border: none; border-radius: 24px; overflow: hidden; background: white; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+    .table-detail th { background-color: #f8fafc; color: #64748b; font-weight: 600; width: 35%; border-left: 4px solid #4f46e5; padding: 15px 20px; }
+    .table-detail td { font-weight: 500; color: #1e293b; padding: 15px 20px; }
+    .price-large { font-size: 2rem; font-weight: 800; color: #ef4444; letter-spacing: -1px; }
+    .description-box { background-color: #f8fafc; border-radius: 20px; padding: 30px; line-height: 1.8; color: #334155; border: 1px solid #e2e8f0; min-height: 150px; }
+    .img-main-container { border-radius: 20px; overflow: hidden; border: 1px solid #e2e8f0; height: 400px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; }
+    .img-grid-item { border-radius: 12px; overflow: hidden; height: 100px; border: 1px solid #e2e8f0; cursor: pointer; transition: 0.3s; background: #f8fafc; }
+    .img-grid-item:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-color: #4f46e5; }
+    .img-full { width: 100%; height: 100%; object-fit: cover; }
+    .badge-status { padding: 10px 20px; border-radius: 50px; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; }
+    .section-title { font-size: 0.8rem; font-weight: 800; text-transform: uppercase; color: #4f46e5; letter-spacing: 1.5px; margin-bottom: 20px; display: block; }
+    .bg-primary-soft { background-color: rgba(79, 70, 229, 0.1); }
+    .border-dashed-custom { border: 2px dashed #cbd5e1 !important; }
 </style>
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-2 sidebar min-vh-100 p-3 text-white">
-            <h4 class="text-center mt-3 mb-4">REAL ESTATE</h4>
-            <div class="nav flex-column nav-pills">
-                <a href="{{ route('index-news-admin') }}" class="nav-link">
-                    <i class="fas fa-newspaper me-3"></i> Quản lý Tin tức
-                </a>
-                <a href="{{ route('index-false-sale-post-admin') }}" class="nav-link {{ !$post->status ? 'active' : '' }}">
-                    <i class="fas fa-clock me-3"></i> Duyệt bài đăng 
-                </a>
-                <a href="{{ route('index-true-sale-post-admin') }}" class="nav-link {{ $post->status ? 'active' : '' }}">
-                    <i class="fas fa-check-circle me-3"></i> Bài đăng đã duyệt
-                </a>
-                <div class="mt-auto pt-4">
-                    <hr class="opacity-20">
-                    <form action="{{ route('logout') }}" method="POST">
-                        @csrf
-                        <button class="btn btn-outline-danger btn-sm w-100 py-2 border-0">
-                            <i class="fas fa-sign-out-alt me-2"></i> Đăng xuất
-                        </button>
-                    </form>
+<div class="container-fluid py-4">
+    {{-- Top Header --}}
+    <div class="mb-4 d-flex justify-content-between align-items-center">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="#" class="text-muted text-decoration-none">Hệ thống</a></li>
+                    <li class="breadcrumb-item active text-primary fw-bold">Chi tiết tin #{{ $item->id }}</li>
+                </ol>
+            </nav>
+            <h2 class="fw-800 text-dark m-0">Xem trước & Thẩm định</h2>
+        </div>
+        <div class="d-flex gap-2">
+            @if($item->status)
+                <span class="badge bg-success text-white badge-status shadow-sm d-flex align-items-center">
+                    <i class="fas fa-check-circle me-2"></i> Đang hiển thị
+                </span>
+            @else
+                <span class="badge bg-warning text-dark badge-status shadow-sm d-flex align-items-center">
+                    <i class="fas fa-clock me-2"></i> Chờ phê duyệt
+                </span>
+            @endif
+        </div>
+    </div>
+
+    <div class="card detail-card shadow-sm mb-4">
+        <div class="card-body p-4 p-lg-5">
+            <div class="row g-5">
+                {{-- Trái: Nội dung chi tiết --}}
+                <div class="col-lg-7">
+                    <span class="section-title">Thông tin bất động sản</span>
+                    <h3 class="fw-800 text-dark mb-4" style="line-height: 1.3;">{{ $item->title }}</h3>
+                    
+                    <div class="table-responsive rounded-4 border overflow-hidden mb-5">
+                        <table class="table table-detail align-middle mb-0">
+                            <tr>
+                                <th><i class="fas fa-tag me-2"></i> Giá niêm yết</th>
+                                <td><span class="price-large">{{ number_format($item->price) }} ₫</span></td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-vector-square me-2"></i> Diện tích</th>
+                                <td><span class="fs-5 fw-bold">{{ $item->area }} m²</span></td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-bed me-2"></i> Tiện nghi</th>
+                                <td>
+                                    <span class="me-3 fw-bold"><i class="fas fa-door-open text-primary me-1"></i> {{ $item->bedrooms }} PN</span>
+                                    <span class="fw-bold"><i class="fas fa-shower text-info me-1"></i> {{ $item->bathrooms }} PT</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-couch me-2"></i> Tình trạng nội thất</th>
+                                <td>
+                                    @if($item->is_furnished)
+                                        <span class="badge bg-primary-soft text-primary px-3 py-2 rounded-pill border border-primary border-opacity-25">Đầy đủ nội thất</span>
+                                    @else
+                                        <span class="text-muted italic">Cơ bản / Chưa có nội thất</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><i class="fas fa-map-marked-alt me-2"></i> Tọa lạc tại</th>
+                                <td class="text-dark fw-bold">{{ $item->address }}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <span class="section-title">Mô tả từ người đăng</span>
+                    <div class="description-box shadow-sm">
+                        {!! nl2br(e($item->description)) !!}
+                    </div>
+                </div>
+
+                {{-- Phải: Gallery Hình ảnh --}}
+                <div class="col-lg-5">
+                    <span class="section-title">Hình ảnh thực tế ({{ $item->images->count() }})</span>
+                    
+                    @if($item->images->isNotEmpty())
+                        {{-- Ảnh chính nổi bật --}}
+                        <div class="img-main-container mb-3 shadow-sm">
+                            @php 
+                                $first = $item->images->first()->image_url;
+                                $firstSrc = str_starts_with($first, 'http') ? $first : asset('storage/' . ltrim($first, '/'));
+                            @endphp
+                            <img src="{{ $firstSrc }}" class="img-full" id="mainImage" onerror="this.src='https://placehold.co/800x600?text=Hình+Ảnh+Đang+Cập+Nhật'">
+                        </div>
+
+                        {{-- Thumbnails --}}
+                        <div class="row g-2">
+                            @foreach($item->images as $img)
+                                <div class="col-3">
+                                    <div class="img-grid-item shadow-sm">
+                                        @php $s = str_starts_with($img->image_url, 'http') ? $img->image_url : asset('storage/' . ltrim($img->image_url, '/')); @endphp
+                                        <img src="{{ $s }}" class="img-full" onclick="document.getElementById('mainImage').src = this.src" onerror="this.src='https://placehold.co/200x200?text=Lỗi'">
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        {{-- Empty State cho ảnh Seed bị thiếu --}}
+                        <div class="text-center py-5 bg-light rounded-4 border-dashed-custom" style="min-height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                            <div class="bg-white p-4 rounded-circle shadow-sm mb-3">
+                                <i class="fas fa-camera-retro fa-3x text-muted opacity-25"></i>
+                            </div>
+                            <h5 class="text-dark fw-bold">Chưa tải lên hình ảnh</h5>
+                            <p class="text-muted small px-5">Bài đăng này chưa có ảnh. Hãy chỉnh sửa để bổ sung hình ảnh minh họa.</p>
+                            <a href="{{ route('edit-sale-post-admin', $item->id) }}" class="btn btn-sm btn-primary rounded-pill px-4 mt-2">
+                                <i class="fas fa-upload me-2"></i> Tải ảnh ngay
+                            </a>
+                        </div>
+                    @endif
+
+                    {{-- Thông tin tài khoản đăng tin --}}
+                    <div class="mt-4 p-4 rounded-4 bg-white border shadow-sm">
+                        <span class="section-title mb-3" style="font-size: 0.6rem;">Chủ tin đăng</span>
+                        <div class="d-flex align-items-center">
+                            <div class="flex-shrink-0">
+                                <div class="bg-dark text-white rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 54px; height: 54px; font-size: 1.3rem;">
+                                    {{ strtoupper(substr($item->user->name ?? 'U', 0, 1)) }}
+                                </div>
+                            </div>
+                            <div class="ms-3">
+                                <h6 class="fw-800 text-dark mb-0">{{ $item->user->name ?? 'Người dùng hệ thống' }}</h6>
+                                <small class="text-muted">{{ $item->user->email ?? 'no-email@system.com' }}</small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-10 p-4">
-            <div class="mb-4 d-flex justify-content-between align-items-end">
-                <div>
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb mb-1">
-                            <li class="breadcrumb-item"><a href="#" class="text-decoration-none text-muted">Bất động sản</a></li>
-                            <li class="breadcrumb-item active">Chi tiết tin đăng</li>
-                        </ol>
-                    </nav>
-                    <h2 class="fw-bold text-dark m-0"><i class="fas fa-file-alt text-primary me-2"></i> Thẩm định nội dung</h2>
-                </div>
-                <div>
-                    @if($post->status)
-                        <span class="badge bg-success badge-status shadow-sm"><i class="fas fa-globe me-1"></i> Đang hiển thị</span>
-                    @else
-                        <span class="badge bg-warning text-dark badge-status shadow-sm"><i class="fas fa-shield-alt me-1"></i> Đang chờ duyệt</span>
+        {{-- Thanh tác vụ dưới cùng --}}
+        <div class="card-footer p-4 bg-light border-top">
+            <div class="d-flex justify-content-between align-items-center">
+                <a href="{{ url()->previous() }}" class="btn btn-outline-secondary border-0 fw-bold px-3">
+                    <i class="fas fa-chevron-left me-2"></i> Quay lại
+                </a>
+                
+                <div class="d-flex gap-2">
+                    <form action="{{ route('destroy-sale-post-admin', $item->id) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa vĩnh viễn tin đăng này?')">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="btn btn-link text-danger fw-bold text-decoration-none px-3">
+                            <i class="fas fa-trash-alt me-2"></i> Xóa tin
+                        </button>
+                    </form>
+
+                    <a href="{{ route('edit-sale-post-admin', $item->id) }}" class="btn btn-outline-warning fw-bold px-4 rounded-3 bg-white">
+                        <i class="fas fa-pen me-2"></i> Chỉnh sửa
+                    </a>
+                    
+                    @if(!$item->status)
+                        <form action="{{ route('approve-sale-post-admin', $item->id) }}" method="POST">
+                            @csrf @method('PATCH')
+                            <button type="submit" class="btn btn-primary fw-bold px-5 rounded-3 shadow-lg" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border: none;">
+                                <i class="fas fa-check-double me-2"></i> PHÊ DUYỆT BÀI ĐĂNG
+                            </button>
+                        </form>
                     @endif
-                </div>
-            </div>
-
-            <div class="card detail-card shadow-sm mb-4">
-                <div class="card-body p-4">
-                    <div class="row g-5">
-                        <div class="col-md-7">
-                            <h3 class="fw-bold mb-4" style="color: #0f172a;">{{ $post->title }}</h3>
-                            
-                            <table class="table table-detail align-middle">
-                                <tr>
-                                    <th><i class="fas fa-money-bill-wave me-2"></i> Giá niêm yết</th>
-                                    <td><span class="price-large">{{ number_format($post->price) }} đ</span></td>
-                                </tr>
-                                <tr>
-                                    <th><i class="fas fa-expand-arrows-alt me-2"></i> Diện tích</th>
-                                    <td><span class="fw-bold">{{ $post->area }} m²</span></td>
-                                </tr>
-                                <tr>
-                                    <th><i class="fas fa-door-open me-2"></i> Cấu trúc</th>
-                                    <td>{{ $post->bedrooms }} Phòng ngủ / {{ $post->bathrooms }} Phòng tắm</td>
-                                </tr>
-                                <tr>
-                                    <th><i class="fas fa-couch me-2"></i> Tình trạng nội thất</th>
-                                    <td>
-                                        @if($post->is_furnished)
-                                            <span class="text-success"><i class="fas fa-check-circle me-1"></i> Đầy đủ nội thất</span>
-                                        @else
-                                            <span class="text-muted"><i class="fas fa-times-circle me-1"></i> Nhà trống</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th><i class="fas fa-map-marked-alt me-2"></i> Vị trí</th>
-                                    <td>{{ $post->address }}</td>
-                                </tr>
-                            </table>
-
-                            <div class="mt-5">
-                                <h5 class="fw-bold text-dark mb-3"><i class="fas fa-align-left text-primary me-2"></i>Mô tả chi tiết bài viết</h5>
-                                <div class="description-box shadow-sm">
-                                    {!! nl2br(e($post->description)) !!}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-5">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="fw-bold text-dark m-0"><i class="fas fa-camera text-primary me-2"></i>Thư viện ảnh</h5>
-                                <span class="badge bg-secondary rounded-pill">{{ $post->images->count() }} ảnh</span>
-                            </div>
-
-                            @if($post->images->isNotEmpty())
-                                <div class="row g-3">
-                                    @foreach($post->images as $image)
-                                        <div class="col-6">
-                                            <div class="image-preview shadow-sm border">
-                                                <a href="{{ asset('storage/' . $image->image_url) }}" target="_blank">
-                                                    <img src="{{ asset('storage/' . $image->image_url) }}" alt="BĐS Image">
-                                                </a>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            @else
-                                <div class="text-center py-5 rounded-4 bg-light border border-dashed" style="border: 2px dashed #cbd5e1 !important;">
-                                    <i class="fas fa-image fa-4x text-muted opacity-20 mb-3"></i>
-                                    <p class="text-muted small fw-bold">Không có hình ảnh đính kèm</p>
-                                </div>
-                            @endif
-                            
-                            <div class="alert alert-info border-0 mt-4 small shadow-sm">
-                                <i class="fas fa-lightbulb me-2"></i> <strong>Mẹo:</strong> Click vào hình ảnh để xem kích thước đầy đủ trong tab mới.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card-footer action-bar p-4">
-                    <div class="row align-items-center">
-                        <div class="col-md-6">
-                            <a href="{{ $post->status ? route('index-true-sale-post-admin') : route('index-false-sale-post-admin') }}" class="btn btn-light px-4 py-2 fw-semibold me-2 border">
-                                <i class="fas fa-chevron-left me-2"></i>Quay lại danh sách
-                            </a>
-                            <a href="{{ route('edit-sale-post-admin', $post->id) }}" class="btn btn-warning px-4 py-2 fw-semibold shadow-sm">
-                                <i class="fas fa-edit me-2"></i>Chỉnh sửa thông tin
-                            </a>
-                        </div>
-                        <div class="col-md-6 text-md-end mt-3 mt-md-0">
-                            @if(!$post->status && strcasecmp(Auth::user()->role, 'admin') === 0)
-                                <form action="{{ route('approve-sale-post-admin', $post->id) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    @method('PATCH')
-                                    <button type="submit" class="btn btn-success px-5 py-2 fw-bold shadow" onclick="return confirm('Phê duyệt tin đăng này lên website công khai?')">
-                                        <i class="fas fa-check-double me-2"></i>PHÊ DUYỆT BÀI ĐĂNG
-                                    </button>
-                                </form>
-                            @endif
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+@endif
+@endsection

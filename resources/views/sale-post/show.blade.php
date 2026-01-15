@@ -12,8 +12,6 @@
     
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #fcfdfe; }
-        
-        /* Grid ảnh kiểu Airbnb chuyên nghiệp */
         .gallery-grid { 
             display: grid; 
             grid-template-columns: 2fr 1fr; 
@@ -21,11 +19,7 @@
             gap: 12px; 
         }
         .gallery-item-main { grid-row: span 2; }
-        
-        /* Hiệu ứng nút Quay lại tinh tế */
-        .back-link-pill {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+        .back-link-pill { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .back-link-pill:hover { 
             transform: translateX(-5px); 
             background-color: #ffffff;
@@ -33,21 +27,62 @@
             color: #4f46e5;
             box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);
         }
-
-        /* Animation cho Spinner Loading */
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
-        .animate-spin-fast {
-            animation: spin 0.8s linear infinite;
-        }
+        .animate-spin-fast { animation: spin 0.8s linear infinite; }
     </style>
 </head>
 <body class="text-gray-900 leading-relaxed">
 
+@php
+    /**
+     * LOGIC XỬ LÝ ẢNH THÔNG MINH
+     */
+    $convertImage = function($path) {
+        if (!$path) return 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1200&q=80';
+        
+        // 1. Nếu là URL tuyệt đối
+        if (filter_var($path, FILTER_VALIDATE_URL)) return $path;
+        
+        // 2. Nếu là ảnh Seeder (trong public/images)
+        if (str_starts_with($path, 'images/')) return asset($path);
+        
+        // 3. Nếu là ảnh Storage (User upload)
+        return asset('storage/' . $path);
+    };
+    
+    $imgs = $rentPosts->images;
+@endphp
+
+{{-- THANH THÔNG BÁO TRẠNG THÁI CHỜ DUYỆT --}}
+@if(!$rentPosts->status)
+<div class="bg-amber-500 text-white py-3 px-4 shadow-lg sticky top-0 z-50 border-b border-amber-600/20 backdrop-blur-md bg-amber-500/95">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-3 font-bold text-sm">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center animate-pulse">
+                <i class="fas fa-clock text-white"></i>
+            </div>
+            <span>TIN ĐANG CHỜ DUYỆT: <span class="font-normal opacity-90">Chỉ bạn và Quản trị viên mới thấy tin này.</span></span>
+        </div>
+        
+        @if(auth()->check() && strcasecmp(auth()->user()->role, 'admin') === 0)
+            <form action="{{ route('approve-sale-post-admin', $rentPosts->id) }}" method="POST" class="shrink-0">
+                @csrf 
+                @method('PATCH')
+                <button type="submit" class="bg-white text-amber-600 px-6 py-2 rounded-full hover:bg-amber-50 transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-2 active:scale-95 text-xs font-black uppercase">
+                    Duyệt bài ngay
+                </button>
+            </form>
+        @endif
+    </div>
+</div>
+@endif
+
 <div class="max-w-6xl mx-auto px-4 py-8">
     
+    {{-- NAVIGATION --}}
     <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <a href="javascript:history.back()" class="back-link-pill inline-flex items-center px-5 py-2.5 bg-white border border-gray-200 rounded-full text-gray-600 font-bold text-sm shadow-sm">
             <i class="fas fa-arrow-left mr-2 text-xs"></i> Quay lại
@@ -55,12 +90,11 @@
         <nav class="flex items-center space-x-2 text-sm font-medium">
             <a href="/" class="text-gray-400 hover:text-indigo-600 transition">Trang chủ</a>
             <span class="text-gray-300">/</span>
-            <span class="text-gray-400">Tin thuê</span>
-            <span class="text-gray-300">/</span>
             <span class="text-indigo-600 font-bold">Chi tiết bài đăng</span>
         </nav>
     </div>
 
+    {{-- HEADER INFO --}}
     <div class="mb-8">
         <div class="flex flex-col md:flex-row md:justify-between md:items-end gap-6">
             <div class="flex-1">
@@ -76,25 +110,37 @@
                 </p>
             </div>
             <div class="bg-white p-4 md:p-0 rounded-2xl md:bg-transparent">
-                <p class="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mb-1">Giá</p>
-                <p class="text-4xl font-black text-rose-600 tracking-tighter">{{ number_format($rentPosts->price) }} <span class="text-xl">VND</span></p>
+                <p class="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mb-1">Giá thuê</p>
+                <p class="text-4xl font-black text-rose-600 tracking-tighter">{{ number_format($rentPosts->price) }} <span class="text-xl font-bold">VND</span></p>
             </div>
         </div>
     </div>
 
-    @php $imgs = $rentPosts->images; @endphp
-    <div class="gallery-grid rounded-[32px] overflow-hidden shadow-2xl mb-12 border-[6px] border-white">
+    {{-- PHOTO GALLERY --}}
+    <div class="gallery-grid rounded-[32px] overflow-hidden shadow-2xl mb-12 border-[6px] border-white bg-gray-100">
+        {{-- Ảnh chính --}}
         <div class="gallery-item-main overflow-hidden group">
-            <img src="{{ asset('storage/' . ($imgs[0]->image_url ?? 'default.jpg')) }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">
+            <img src="{{ $convertImage($imgs[0]->image_url ?? null) }}" 
+                 class="w-full h-full object-cover group-hover:scale-105 transition duration-700"
+                 onerror="this.src='https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1200&q=80'">
         </div>
+        
+        {{-- Ảnh phụ 1 --}}
         <div class="overflow-hidden group">
-            <img src="{{ asset('storage/' . ($imgs[1]->image_url ?? ($imgs[0]->image_url ?? 'default.jpg'))) }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">
+            <img src="{{ $convertImage($imgs[1]->image_url ?? ($imgs[0]->image_url ?? null)) }}" 
+                 class="w-full h-full object-cover group-hover:scale-105 transition duration-700"
+                 onerror="this.src='https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80'">
         </div>
+
+        {{-- Ảnh phụ 2 + Overlay nếu có nhiều ảnh --}}
         <div class="relative overflow-hidden group">
-            <img src="{{ asset('storage/' . ($imgs[2]->image_url ?? ($imgs[0]->image_url ?? 'default.jpg'))) }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">
+            <img src="{{ $convertImage($imgs[2]->image_url ?? ($imgs[0]->image_url ?? null)) }}" 
+                 class="w-full h-full object-cover group-hover:scale-105 transition duration-700"
+                 onerror="this.src='https://images.unsplash.com/photo-1448630360428-6542e085c95e?auto=format&fit=crop&w=800&q=80'">
+            
             @if($imgs->count() > 3)
-                <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span class="text-white font-bold underline">Xem tất cả ảnh</span>
+                <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                    <span class="text-white font-bold underline italic">Xem tất cả {{ $imgs->count() }} ảnh</span>
                 </div>
                 <div class="absolute bottom-5 right-5 bg-black/70 text-white px-4 py-2 rounded-xl text-xs font-bold backdrop-blur-md border border-white/20 pointer-events-none">
                     <i class="fas fa-images mr-2"></i> +{{ $imgs->count() - 3 }} ảnh khác
@@ -104,6 +150,7 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        {{-- CHI TIẾT NỘI DUNG (Trái) --}}
         <div class="lg:col-span-2">
             
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
@@ -134,16 +181,18 @@
                 </div>
             </div>
 
+            {{-- CẢNH BÁO --}}
             <div class="p-6 bg-slate-900 rounded-[32px] text-white flex gap-5 items-center">
                 <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-xl shrink-0">
                     <i class="fas fa-user-shield text-indigo-400"></i>
                 </div>
                 <p class="text-sm text-slate-300 font-medium">
-                    <strong class="text-white">Lưu ý:</strong> Để đảm bảo an toàn, tuyệt đối không chuyển khoản trước khi xem nhà và ký hợp đồng trực tiếp với chủ hộ.
+                    <strong class="text-white">Lưu ý an toàn:</strong> Tuyệt đối không đặt cọc hoặc chuyển khoản trước khi xem nhà và xác nhận pháp lý chính chủ.
                 </p>
             </div>
         </div>
 
+        {{-- SIDEBAR LIÊN HỆ (Phải) --}}
         <div class="lg:col-span-1">
             <div class="sticky top-8">
                 <div class="bg-white border border-gray-100 p-8 rounded-[48px] shadow-2xl shadow-indigo-100/50 relative overflow-hidden">
@@ -161,11 +210,10 @@
 
                     @auth
                         @if(auth()->id() !== (int)$rentPosts->user_id)
-                            {{-- FORM LIÊN HỆ ĐÃ ĐƯỢC TỐI ƯU --}}
                             <form action="{{ route('contacts.start') }}" method="POST" id="mainContactForm" onsubmit="return handleFormSubmit(this)">
                                 @csrf
                                 <input type="hidden" name="user_two_id" value="{{ $rentPosts->user_id }}">
-                                <input type="hidden" name="sale_post_id" value="{{ $rentPosts->id }}"> {{-- DÒNG QUAN TRỌNG --}}
+                                <input type="hidden" name="sale_post_id" value="{{ $rentPosts->id }}"> 
                                 
                                 <button type="submit" id="submitBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold py-5 px-6 rounded-3xl transition-all duration-300 flex items-center justify-center gap-3 shadow-xl shadow-indigo-200 group">
                                     <span id="btnText" class="flex items-center gap-2">
@@ -189,7 +237,7 @@
                     @endauth
 
                     <a href="tel:0123456789" class="block w-full mt-4 bg-emerald-500 hover:bg-emerald-600 text-white text-center font-bold py-5 px-6 rounded-3xl transition duration-300 shadow-xl shadow-emerald-100">
-                        <i class="fas fa-phone-alt mr-2 text-sm"></i> 0123.456.789
+                        <i class="fas fa-phone-alt mr-2 text-sm"></i> Gọi 0123.456.789
                     </a>
 
                     <div class="mt-8 text-center">
@@ -205,25 +253,17 @@
 </div>
 
 <script>
-    /**
-     * Hàm xử lý khi nhấn gửi Form
-     * - Chống việc người dùng bấm nhiều lần (Double Click)
-     * - Hiển thị trạng thái Loading
-     */
     function handleFormSubmit(form) {
         const btnText = document.getElementById('btnText');
         const btnLoading = document.getElementById('btnLoading');
         const submitBtn = document.getElementById('submitBtn');
 
-        // 1. Ẩn chữ, hiện icon xoay
         btnText.classList.add('hidden');
         btnLoading.classList.remove('hidden');
 
-        // 2. Vô hiệu hóa nút bấm
         submitBtn.disabled = true;
         submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
 
-        // 3. Cho phép form gửi đi
         return true;
     }
 </script>

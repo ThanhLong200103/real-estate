@@ -1,169 +1,209 @@
 @extends('admin.layout')
 
 @section('content')
+@php
+    // Đồng bộ hóa dữ liệu từ mọi nguồn Controller
+    $item = $post ?? $salePost ?? $rentPost ?? $item ?? null;
+@endphp
+
 <style>
-    /* Style bổ sung cho phần hiển thị ảnh hiện tại */
-    .current-images-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-        gap: 15px;
-        background: #f1f5f9;
-        padding: 15px;
+    /* Nâng cấp hiệu ứng Input */
+    .form-control-custom {
+        border: 2px solid #f1f5f9;
         border-radius: 12px;
+        padding: 12px 16px;
+        transition: all 0.3s;
+        background-color: #f8fafc;
     }
-    .img-wrapper {
+    .form-control-custom:focus {
+        border-color: #4f46e5;
+        background-color: #fff;
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+    }
+    
+    /* Quản lý ảnh hiện đại */
+    .image-container-edit {
         position: relative;
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .img-wrapper img {
         width: 100%;
-        height: 90px;
+        padding-top: 75%; /* Ratio 4:3 */
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        background: #f1f5f9;
+    }
+    .image-container-edit img {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
         object-fit: cover;
     }
-    .img-badge {
-        position: absolute;
-        top: 5px;
-        right: 5px;
-        background: rgba(0,0,0,0.5);
-        color: white;
-        font-size: 10px;
-        padding: 2px 6px;
-        border-radius: 4px;
+    
+    /* Card nổi bật */
+    .edit-card {
+        border: none;
+        border-radius: 24px;
+        background: #ffffff;
+    }
+    
+    .section-label {
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #64748b;
+        margin-bottom: 1rem;
+        display: block;
+    }
+
+    .sticky-sidebar {
+        position: sticky;
+        top: 2rem;
+    }
+
+    .empty-image-placeholder {
+        background: #f8fafc;
+        border: 2px dashed #cbd5e1;
+        border-radius: 16px;
+        padding: 2rem;
+        text-align: center;
     }
 </style>
 
-<div class="mb-4">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item">
-                <a href="{{ $rentPost->status ? route('index-true-sale-post-admin') : route('index-false-sale-post-admin') }}" up-follow up-target=".main-wrapper">
-                    Quản lý bài đăng
-                </a>
-            </li>
-            <li class="breadcrumb-item active" aria-current="page">Chỉnh sửa</li>
-        </ol>
-    </nav>
-    <h2 class="fw-bold text-dark"><i class="fas fa-edit text-primary me-2"></i> Chỉnh Sửa Bất Động Sản</h2>
-    <p class="text-muted small">Cập nhật thông tin chi tiết cho bài đăng: <strong>{{ $rentPost->title }}</strong></p>
-</div>
+<div class="container-fluid py-4">
+    @if(!$item)
+        <div class="text-center py-5">
+            <h4 class="text-muted">Không tìm thấy dữ liệu để chỉnh sửa</h4>
+            <a href="{{ url()->previous() }}" class="btn btn-primary rounded-pill px-4">Quay lại</a>
+        </div>
+    @else
+        {{-- Header --}}
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-800 text-dark m-0">Chỉnh sửa tin đăng</h2>
+                <p class="text-muted mb-0 small">ID: #{{ $item->id }} • Loại: {{ isset($salePost) ? 'Tin bán' : 'Tin thuê' }}</p>
+            </div>
+            <a href="{{ url()->previous() }}" class="btn btn-outline-secondary border-0 fw-bold">
+                <i class="fas fa-times me-2"></i> Hủy thay đổi
+            </a>
+        </div>
 
-@if ($errors->any())
-    <div class="alert alert-danger border-0 shadow-sm mb-4">
-        <div class="fw-bold mb-1"><i class="fas fa-exclamation-triangle me-2"></i> Có lỗi xảy ra:</div>
-        <ul class="mb-0 small">
-            @foreach($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-@endif
-
-<div class="card card-form shadow-sm border-0" style="border-radius: 16px;">
-    <div class="card-body p-4 p-md-5">
-        <form action="{{ route('update-sale-post-admin', $rentPost->id) }}" method="POST" enctype="multipart/form-data" up-submit up-target=".main-wrapper">
+        <form action="{{ route('update-sale-post-admin', $item->id) }}" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
-
-            <div class="form-section-title">1. Thông tin cơ bản</div>
-            <div class="mb-4">
-                <label class="form-label">Tiêu đề bài đăng <span class="text-danger">*</span></label>
-                <input type="text" name="title" class="form-control" value="{{ old('title', $rentPost->title) }}" required>
-            </div>
-
-            <div class="mb-4">
-                <label class="form-label">Mô tả chi tiết <span class="text-danger">*</span></label>
-                <textarea name="description" class="form-control" rows="5" required>{{ old('description', $rentPost->description) }}</textarea>
-            </div>
-
-            <div class="form-section-title mt-5">2. Giá trị & Vị trí</div>
-            <div class="row">
-                <div class="col-md-6 mb-4">
-                    <label class="form-label">Giá bán/thuê (VNĐ)</label>
-                    <div class="input-group">
-                        <input type="number" name="price" class="form-control" value="{{ old('price', $rentPost->price) }}" required>
-                        <span class="input-group-text">VNĐ</span>
-                    </div>
-                </div>
-                <div class="col-md-6 mb-4">
-                    <label class="form-label">Diện tích (m²)</label>
-                    <div class="input-group">
-                        <input type="number" step="0.1" name="area" class="form-control" value="{{ old('area', $rentPost->area) }}" required>
-                        <span class="input-group-text">m²</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mb-4">
-                <label class="form-label">Địa chỉ chính xác <span class="text-danger">*</span></label>
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0"><i class="fas fa-map-marker-alt text-danger"></i></span>
-                    <input type="text" name="address" class="form-control border-start-0" value="{{ old('address', $rentPost->address) }}" required>
-                </div>
-            </div>
-
-            <div class="form-section-title mt-5">3. Thông số chi tiết</div>
-            <div class="row align-items-center">
-                <div class="col-md-4 mb-4">
-                    <label class="form-label">Số phòng ngủ</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-bed text-primary"></i></span>
-                        <input type="number" name="bedrooms" class="form-control border-start-0" value="{{ old('bedrooms', $rentPost->bedrooms) }}">
-                    </div>
-                </div>
-                <div class="col-md-4 mb-4">
-                    <label class="form-label">Số phòng tắm</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-bath text-primary"></i></span>
-                        <input type="number" name="bathrooms" class="form-control border-start-0" value="{{ old('bathrooms', $rentPost->bathrooms) }}">
-                    </div>
-                </div>
-                <div class="col-md-4 mb-4">
-                    <div class="form-check form-switch pt-2">
-                        <input type="hidden" name="is_furnished" value="0">
-                        <input type="checkbox" name="is_furnished" class="form-check-input" id="is_furnished" value="1" {{ old('is_furnished', $rentPost->is_furnished) ? 'checked' : '' }}>
-                        <label class="form-check-label fw-bold ms-2" for="is_furnished">Đã có nội thất</label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-section-title mt-5">4. Hình ảnh</div>
-            <div class="mb-4">
-                <label class="form-label d-block mb-3">Ảnh hiện tại trên hệ thống:</label>
-                <div class="current-images-grid">
-                    @foreach($rentPost->images as $image)
-                        <div class="img-wrapper">
-                            <img src="{{ asset('storage/' . $image->image_url) }}" alt="image">
-                            <span class="img-badge">Ảnh {{ $loop->iteration }}</span>
+            
+            <div class="row g-4">
+                {{-- Cột Trái: Nội dung --}}
+                <div class="col-lg-8">
+                    <div class="card edit-card shadow-sm p-4 p-lg-5">
+                        <span class="section-label">Thông tin cơ bản</span>
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small">Tiêu đề bài viết <span class="text-danger">*</span></label>
+                            <input type="text" name="title" class="form-control form-control-custom fw-bold text-dark" 
+                                   value="{{ old('title', $item->title) }}" required>
                         </div>
-                    @endforeach
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small">Mô tả chi tiết <span class="text-danger">*</span></label>
+                            <textarea name="description" class="form-control form-control-custom" 
+                                      rows="8" required>{{ old('description', $item->description) }}</textarea>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small">Giá niêm yết (VNĐ)</label>
+                                <div class="input-group">
+                                    <input type="number" name="price" class="form-control form-control-custom" 
+                                           value="{{ old('price', $item->price) }}">
+                                    <span class="input-group-text bg-light border-0 fw-bold">₫</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small">Diện tích (m²)</label>
+                                <div class="input-group">
+                                    <input type="number" name="area" class="form-control form-control-custom" 
+                                           value="{{ old('area', $item->area) }}">
+                                    <span class="input-group-text bg-light border-0 fw-bold">m²</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-0">
+                            <label class="form-label fw-bold small">Địa chỉ chi tiết</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0"><i class="fas fa-map-marker-alt text-muted"></i></span>
+                                <input type="text" name="address" class="form-control form-control-custom" 
+                                       value="{{ old('address', $item->address) }}">
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <div class="mb-5">
-                <label class="form-label">Cập nhật ảnh mới (Nếu chọn sẽ thay thế ảnh cũ)</label>
-                <div class="border-dashed p-4 text-center rounded-4 mb-2" style="border: 2px dashed #cbd5e1; background-color: #f8fafc;">
-                    <i class="fas fa-images fa-2x text-muted mb-3"></i>
-                    <input type="file" name="image_url[]" class="form-control shadow-none border-0 bg-transparent" multiple accept=".jpg,.jpeg,.png,.webp" style="margin: 0 auto; max-width: 300px;">
-                    <p class="small text-muted mt-3 mb-0">Chọn nhiều ảnh để tải lên cùng lúc</p>
+                {{-- Cột Phải: Thông số & Ảnh --}}
+                <div class="col-lg-4">
+                    <div class="sticky-sidebar">
+                        <div class="card edit-card shadow-sm p-4 mb-4">
+                            <span class="section-label">Thông số kỹ thuật</span>
+                            <div class="row g-3 mb-3">
+                                <div class="col-6">
+                                    <label class="small fw-bold mb-1">Phòng ngủ</label>
+                                    <input type="number" name="bedrooms" class="form-control form-control-custom py-2" 
+                                           value="{{ old('bedrooms', $item->bedrooms) }}">
+                                </div>
+                                <div class="col-6">
+                                    <label class="small fw-bold mb-1">Phòng tắm</label>
+                                    <input type="number" name="bathrooms" class="form-control form-control-custom py-2" 
+                                           value="{{ old('bathrooms', $item->bathrooms) }}">
+                                </div>
+                            </div>
+                            <div class="form-check form-switch py-2">
+                                <input class="form-check-input" type="checkbox" name="is_furnished" id="furnished" 
+                                       value="1" {{ $item->is_furnished ? 'checked' : '' }}>
+                                <label class="form-check-label fw-bold small text-dark" for="furnished">Đã có nội thất</label>
+                            </div>
+                        </div>
+
+                        <div class="card edit-card shadow-sm p-4 mb-4">
+                            <span class="section-label">Thư viện ảnh ({{ $item->images->count() }})</span>
+                            
+                            @if($item->images->count() > 0)
+                                <div class="row g-2 mb-3">
+                                    @foreach($item->images as $img)
+                                        <div class="col-4">
+                                            <div class="image-container-edit shadow-sm">
+                                                @php $src = str_starts_with($img->image_url, 'http') ? $img->image_url : asset('storage/' . ltrim($img->image_url, '/')); @endphp
+                                                <img src="{{ $src }}" onerror="this.src='https://placehold.co/400x300?text=Lỗi+ảnh'">
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="empty-image-placeholder mb-3">
+                                    <i class="fas fa-cloud-upload-alt fa-2x text-muted opacity-50 mb-2"></i>
+                                    <p class="mb-0 small fw-bold text-muted">Chưa có hình ảnh</p>
+                                    <p class="mb-0 text-muted" style="font-size: 10px;">Chọn ảnh mới để cập nhật cho bài Seed</p>
+                                </div>
+                            @endif
+
+                            <div class="p-3 bg-light rounded-3 mb-3">
+                                <label class="small fw-bold mb-2 d-block">Tải ảnh mới</label>
+                                <input type="file" name="image_url[]" class="form-control form-control-sm border-0 bg-white" 
+                                       multiple accept="image/*">
+                                <div class="mt-2 p-2 bg-warning bg-opacity-10 rounded-3">
+                                    <p class="mb-0 text-dark fw-bold" style="font-size: 9px; line-height: 1.2;">
+                                        <i class="fas fa-info-circle me-1 text-warning"></i> Lưu ý: Ảnh mới sẽ thay thế toàn bộ ảnh cũ của tin này.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 py-3 fw-800 shadow-lg border-0" 
+                                    style="border-radius: 16px; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);">
+                                <i class="fas fa-save me-2"></i> LƯU THAY ĐỔI
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-
-            <hr class="my-5">
-
-            <div class="d-flex justify-content-end gap-3">
-                @php
-                    $backRoute = $rentPost->status ? route('index-true-sale-post-admin') : route('index-false-sale-post-admin');
-                @endphp
-                <a href="{{ $backRoute }}" class="btn btn-light px-4 py-2 fw-semibold text-secondary" up-follow up-target=".main-wrapper">
-                    Hủy bỏ
-                </a>
-                <button type="submit" class="btn btn-primary btn-save px-5">
-                    <i class="fas fa-save me-2"></i> Lưu thay đổi
-                </button>
             </div>
         </form>
-    </div>
+    @endif
 </div>
 @endsection

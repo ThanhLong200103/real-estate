@@ -1,188 +1,154 @@
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+@extends('admin.layout')
 
-<style>
-    :root {
-        --sidebar-bg: #1e293b;
-        --sidebar-hover: #334155;
-        --primary-color: #4f46e5;
-        --bg-body: #f8fafc;
-    }
-
-    body {
-        font-family: 'Inter', sans-serif;
-        background-color: var(--bg-body);
-        color: #1e293b;
-    }
-
-    /* --- SIDEBAR --- */
-    .sidebar { background-color: var(--sidebar-bg); box-shadow: 4px 0 10px rgba(0,0,0,0.05); }
-    .sidebar h4 { letter-spacing: 2px; font-weight: 700; color: #f1f5f9; border-bottom: 1px solid #334155; padding-bottom: 20px; }
-    .sidebar .nav-link { border-radius: 8px; margin-bottom: 5px; padding: 12px 15px; transition: 0.2s; font-weight: 500; color: #94a3b8 !important; display: flex; align-items: center; }
-    .sidebar .nav-link:hover { background-color: var(--sidebar-hover); color: #fff !important; }
-    .sidebar .nav-link.active { background-color: var(--primary-color) !important; color: #fff !important; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3); }
-
-    /* --- FORM STYLING --- */
-    .card-form { border: none; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-    .form-section-title { font-size: 0.9rem; font-weight: 700; text-transform: uppercase; color: var(--primary-color); letter-spacing: 1px; border-bottom: 2px solid #eef2ff; padding-bottom: 8px; margin-bottom: 20px; }
-    
-    .form-label { font-size: 0.85rem; font-weight: 600; color: #475569; }
-    .form-control, .form-select { border-radius: 10px; padding: 10px 15px; border: 1px solid #e2e8f0; transition: 0.3s; }
-    .form-control:focus { border-color: var(--primary-color); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); }
-    
-    .input-group-text { background-color: #f8fafc; border-radius: 0 10px 10px 0; color: #64748b; font-weight: 600; }
-    
-    /* --- CUSTOM SWITCH --- */
-    .form-check-input:checked { background-color: var(--primary-color); border-color: var(--primary-color); }
-
-    /* --- BUTTONS --- */
-    .btn-save { background-color: var(--primary-color); border: none; border-radius: 10px; padding: 12px 25px; font-weight: 600; transition: 0.3s; }
-    .btn-save:hover { background-color: #4338ca; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(79, 70, 229, 0.4); }
-    .btn-cancel { border-radius: 10px; padding: 12px 25px; font-weight: 600; color: #64748b; }
-
-    /* --- BREADCRUMB --- */
-    .breadcrumb-item a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
-</style>
-
+@section('content')
 <div class="container-fluid">
-    <div class="row">
-        <div class="col-md-2 sidebar min-vh-100 p-3 text-white">
-            <h4 class="text-center mt-3 mb-4">REAL ESTATE</h4>
-            <div class="nav flex-column nav-pills">
-                <a href="{{ route('index-news-admin') }}" class="nav-link">
-                    <i class="fas fa-newspaper me-3"></i> Quản lý Tin tức
+    {{-- Breadcrumb & Header --}}
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb bg-transparent p-0 mb-2">
+                    <li class="breadcrumb-item"><a href="#" class="text-decoration-none text-muted">Bất động sản</a></li>
+                    <li class="breadcrumb-item active fw-bold" aria-current="page">Tạo bài đăng mới</li>
+                </ol>
+            </nav>
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="fw-bold text-dark mb-0">
+                    <i class="fas fa-plus-circle text-primary me-2"></i>Thêm bài đăng bán/cho thuê
+                </h2>
+                <a href="{{ route('index-true-sale-post-admin') }}" class="btn btn-outline-secondary px-3 shadow-sm" up-follow up-target=".main-content">
+                    <i class="fas fa-arrow-left me-1"></i> Quay lại
                 </a>
-                <a href="{{ route('index-false-sale-post-admin') }}" class="nav-link">
-                    <i class="fas fa-clock me-3"></i> Duyệt bài đăng 
-                </a>
-                <a href="{{ route('index-true-sale-post-admin') }}" class="nav-link active">
-                    <i class="fas fa-check-circle me-3"></i> Bài đăng đã duyệt
-                </a>
-                <div class="mt-auto pt-4">
-                    <hr class="opacity-20">
-                    <form action="{{ route('logout') }}" method="POST">
-                        @csrf
-                        <button class="btn btn-outline-danger btn-sm w-100 py-2 border-0">
-                            <i class="fas fa-sign-out-alt me-2"></i> Đăng xuất
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-10 p-4 main-content">
-            <div class="mb-4">
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="{{ route('index-true-sale-post-admin') }}">Quản lý bài đăng</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Tạo mới</li>
-                    </ol>
-                </nav>
-                <h2 class="fw-bold text-dark"><i class="fas fa-plus-circle text-primary me-2"></i> Tạo Bất Động Sản Mới</h2>
-                <p class="text-muted small">Điền đầy đủ thông tin để đăng tải sản phẩm lên hệ thống.</p>
-            </div>
-
-            @if ($errors->any())
-                <div class="alert alert-danger border-0 shadow-sm mb-4">
-                    <div class="fw-bold mb-1"><i class="fas fa-exclamation-triangle me-2"></i> Có lỗi xảy ra:</div>
-                    <ul class="mb-0 small">
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
-            <div class="card card-form shadow-sm">
-                <div class="card-body p-4 p-md-5">
-                    <form action="{{ route('store-sale-post-admin') }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-
-                        <div class="form-section-title">1. Thông tin cơ bản</div>
-                        <div class="mb-4">
-                            <label class="form-label">Tiêu đề bài đăng <span class="text-danger">*</span></label>
-                            <input type="text" name="title" class="form-control" placeholder="Ví dụ: Căn hộ cao cấp Landmark 81 với view sông Sài Gòn" value="{{ old('title') }}" maxlength="200" required>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="form-label">Mô tả chi tiết <span class="text-danger">*</span></label>
-                            <textarea name="description" class="form-control" rows="5" placeholder="Mô tả ưu điểm, tiện ích xung quanh, hướng nhà..." required>{{ old('description') }}</textarea>
-                        </div>
-
-                        <div class="form-section-title mt-5">2. Giá trị & Vị trí</div>
-                        <div class="row">
-                            <div class="col-md-6 mb-4">
-                                <label class="form-label">Giá bán/thuê (VNĐ)</label>
-                                <div class="input-group">
-                                    <input type="number" name="price" class="form-control" placeholder="0" value="{{ old('price') }}" min="0" required>
-                                    <span class="input-group-text">VNĐ</span>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-4">
-                                <label class="form-label">Diện tích (m²)</label>
-                                <div class="input-group">
-                                    <input type="number" name="area" class="form-control" placeholder="0" value="{{ old('area') }}" min="0" required>
-                                    <span class="input-group-text">m²</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="form-label">Địa chỉ chính xác <span class="text-danger">*</span></label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-white border-end-0"><i class="fas fa-map-marker-alt text-danger"></i></span>
-                                <input type="text" name="address" class="form-control border-start-0" placeholder="Số nhà, tên đường, phường, quận..." value="{{ old('address') }}" maxlength="255" required>
-                            </div>
-                        </div>
-
-                        <div class="form-section-title mt-5">3. Thông số chi tiết</div>
-                        <div class="row align-items-center">
-                            <div class="col-md-4 mb-4">
-                                <label class="form-label">Số phòng ngủ</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-white border-end-0"><i class="fas fa-bed text-primary"></i></span>
-                                    <input type="number" name="bedrooms" class="form-control border-start-0" value="{{ old('bedrooms', 0) }}" min="0" required>
-                                </div>
-                            </div>
-                            <div class="col-md-4 mb-4">
-                                <label class="form-label">Số phòng tắm</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-white border-end-0"><i class="fas fa-bath text-primary"></i></span>
-                                    <input type="number" name="bathrooms" class="form-control border-start-0" value="{{ old('bathrooms', 0) }}" min="0" required>
-                                </div>
-                            </div>
-                            <div class="col-md-4 mb-4">
-                                <div class="form-check form-switch pt-2">
-                                    <input type="hidden" name="is_furnished" value="0">
-                                    <input type="checkbox" name="is_furnished" class="form-check-input" id="is_furnished" value="1" {{ old('is_furnished') ? 'checked' : '' }}>
-                                    <label class="form-check-label fw-bold ms-2" for="is_furnished">Đã có nội thất</label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-section-title mt-5">4. Hình ảnh thực tế</div>
-                        <div class="mb-5">
-                            <div class="border-dashed p-4 text-center rounded-4 mb-2" style="border: 2px dashed #cbd5e1; background-color: #f8fafc;">
-                                <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
-                                <input type="file" name="image_url[]" class="form-control shadow-none border-0 bg-transparent" multiple accept=".jpg,.jpeg,.png,.webp" style="margin: 0 auto; max-width: 300px;">
-                                <p class="small text-muted mt-3 mb-0">Hỗ trợ định dạng: JPG, PNG, WEBP (Tối đa 2MB/ảnh)</p>
-                            </div>
-                        </div>
-
-                        <hr class="my-5">
-
-                        <div class="d-flex justify-content-end gap-3">
-                            <a href="{{ route('index-true-sale-post-admin') }}" class="btn btn-cancel">
-                                Hủy bỏ
-                            </a>
-                            <button type="submit" class="btn btn-primary btn-save px-5">
-                                <i class="fas fa-paper-plane me-2"></i> Đăng bài ngay
-                            </button>
-                        </div>
-                    </form>
-                </div>
             </div>
         </div>
     </div>
+
+    {{-- Hiển thị lỗi Validation --}}
+    @if ($errors->any())
+        <div class="alert alert-danger border-0 shadow-sm mb-4" style="border-radius: 12px;">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li><i class="fas fa-exclamation-triangle me-2"></i>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <form action="{{ route('store-sale-post-admin') }}" method="POST" enctype="multipart/form-data" up-submit up-target=".main-content, .sidebar">
+        @csrf
+        <div class="row g-4">
+            {{-- Cột Trái: Nội dung chính --}}
+            <div class="col-xl-8 col-lg-7">
+                <div class="card border-0 shadow-sm mb-4" style="border-radius: 15px;">
+                    <div class="card-header bg-white py-3 border-0">
+                        <h5 class="fw-bold mb-0 text-dark">Thông tin cơ bản</h5>
+                    </div>
+                    <div class="card-body p-4 pt-0">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Tiêu đề tin đăng <span class="text-danger">*</span></label>
+                            <input type="text" name="title" class="form-control form-control-lg @error('title') is-invalid @enderror" 
+                                   value="{{ old('title') }}" placeholder="Ví dụ: Căn hộ chung cư cao cấp 2PN tại Quận 1..." required style="border-radius: 10px; border: 2px solid #edf2f7;">
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Địa chỉ chi tiết <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-0"><i class="fas fa-map-marker-alt text-danger"></i></span>
+                                <input type="text" name="address" class="form-control @error('address') is-invalid @enderror" 
+                                       value="{{ old('address') }}" placeholder="Số nhà, tên đường, phường, quận..." required style="border: 2px solid #edf2f7; border-radius: 0 10px 10px 0;">
+                            </div>
+                        </div>
+
+                        <div class="mb-0">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Mô tả nội dung <span class="text-danger">*</span></label>
+                            <textarea name="description" class="form-control @error('description') is-invalid @enderror" 
+                                      rows="12" placeholder="Cung cấp thông tin chi tiết về căn nhà, tiện ích xung quanh, pháp lý..." 
+                                      required style="border-radius: 10px; border: 2px solid #edf2f7;">{{ old('description') }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Upload Hình ảnh --}}
+                <div class="card border-0 shadow-sm" style="border-radius: 15px;">
+                    <div class="card-header bg-white py-3 border-0">
+                        <h5 class="fw-bold mb-0 text-dark">Thư viện hình ảnh</h5>
+                    </div>
+                    <div class="card-body p-4 pt-0">
+                        <div class="upload-zone text-center p-5 border-dashed" style="border: 2px dashed #cbd5e0; border-radius: 15px; background-color: #f8fafc;">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                            <h6 class="fw-bold">Chọn ảnh sản phẩm</h6>
+                            <p class="text-muted small">Hỗ trợ JPG, PNG. Có thể chọn nhiều ảnh cùng lúc.</p>
+                            <input type="file" name="images[]" multiple class="form-control mt-3" accept="image/*" style="border-radius: 8px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Cột Phải: Thông số & Action --}}
+            <div class="col-xl-4 col-lg-5">
+                <div class="card border-0 shadow-sm mb-4" style="border-radius: 15px;">
+                    <div class="card-body p-4">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Giá niêm yết (VNĐ)</label>
+                            <div class="input-group">
+                                <input type="number" name="price" class="form-control form-control-lg fw-bold text-primary" 
+                                       value="{{ old('price') }}" required style="border-radius: 10px 0 0 10px; border: 2px solid #edf2f7;">
+                                <span class="input-group-text bg-light border-2" style="border: 2px solid #edf2f7; border-left: 0;">VNĐ</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Diện tích (m²)</label>
+                            <div class="input-group">
+                                <input type="number" name="area" class="form-control fw-bold" 
+                                       value="{{ old('area') }}" required style="border-radius: 10px 0 0 10px; border: 2px solid #edf2f7;">
+                                <span class="input-group-text bg-light border-2" style="border: 2px solid #edf2f7; border-left: 0;">m²</span>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-6">
+                                <label class="form-label fw-bold small text-uppercase text-muted"><i class="fas fa-bed me-1"></i> Phòng ngủ</label>
+                                <input type="number" name="bedrooms" class="form-control" value="{{ old('bedrooms', 0) }}" style="border-radius: 8px; border: 2px solid #edf2f7;">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label fw-bold small text-uppercase text-muted"><i class="fas fa-bath me-1"></i> Phòng tắm</label>
+                                <input type="number" name="bathrooms" class="form-control" value="{{ old('bathrooms', 0) }}" style="border-radius: 8px; border: 2px solid #edf2f7;">
+                            </div>
+                        </div>
+
+                        <hr class="my-4" style="border-top: 2px dashed #edf2f7;">
+
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" name="is_furnished" id="is_furnished" {{ old('is_furnished') ? 'checked' : '' }}>
+                            <label class="form-check-label fw-bold" for="is_furnished">Nội thất đầy đủ</label>
+                        </div>
+
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" name="status" id="status" {{ old('status') ? 'checked' : '' }}>
+                            <label class="form-check-label fw-bold text-success" for="status">Duyệt hiển thị ngay</label>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Nút Submit --}}
+                <div class="card border-0 shadow-sm p-4 text-center" style="border-radius: 15px; background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);">
+                    <p class="text-white opacity-75 small mb-3">
+                        <i class="fas fa-info-circle me-1"></i> Tin đăng sẽ được kiểm duyệt trước khi hiển thị công khai.
+                    </p>
+                    <button type="submit" class="btn btn-white w-100 py-3 fw-bold text-primary shadow" style="border-radius: 12px; background: white; border: none;">
+                        <i class="fas fa-paper-plane me-2"></i>XÁC NHẬN ĐĂNG BÀI
+                    </button>
+                    <a href="{{ route('index-true-sale-post-admin') }}" class="btn btn-link text-white text-decoration-none w-100 mt-2 fw-semibold small opacity-75">Hủy bỏ</a>
+                </div>
+            </div>
+        </div>
+    </form>
 </div>
+
+<style>
+    .border-dashed { transition: all 0.3s ease; }
+    .border-dashed:hover { border-color: #4f46e5 !important; background-color: #eff6ff !important; }
+    .form-control:focus { border-color: #4f46e5 !important; box-shadow: none; }
+    .btn-white:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2) !important; }
+</style>
+@endsection
