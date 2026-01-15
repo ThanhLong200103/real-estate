@@ -54,25 +54,41 @@ Route::middleware('auth')->group(function () {
 });
 
 
-// --- 4. KHU VỰC ADMIN (Yêu cầu đăng nhập & quyền Admin - middleware: auth, admin) ---
+// --- KHU VỰC ADMIN (auth, admin) ---
 Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
 
-    // Quản lý News cho Admin
+    // --- QUẢN LÝ TIN TỨC (NewsController) ---
     Route::prefix('news')->group(function () {
+        // Khớp với return redirect()->route('index-news-admin')
         Route::get('/index', [AdminNewsController::class, 'index'])->name('index-news-admin');
+
+        // Khớp với href="{{ route('create-news-admin') }}"
         Route::get('/create', [AdminNewsController::class, 'create'])->name('create-news-admin');
+
+        // Khớp với return redirect()->route('index-news-admin') trong hàm store/update
         Route::post('/store', [AdminNewsController::class, 'store'])->name('store-news-admin');
+
+        // Khớp với href="{{ route('show-news-admin', $post->id) }}"
         Route::get('/show/{id}', [AdminNewsController::class, 'show'])->name('show-news-admin');
+
+        // Khớp với href="{{ route('edit-news-admin', $post->id) }}"
         Route::get('/edit/{id}', [AdminNewsController::class, 'edit'])->name('edit-news-admin');
+
         Route::put('/update/{id}', [AdminNewsController::class, 'update'])->name('update-news-admin');
         Route::delete('/delete/{id}', [AdminNewsController::class, 'destroy'])->name('destroy-news-admin');
     });
 
-    // Quản lý Sale Post cho Admin (Duyệt bài, xóa bài...)
+    // --- QUẢN LÝ BẤT ĐỘNG SẢN (SalePostController) ---
     Route::prefix('sale-post')->group(function () {
+        // Khớp với return redirect()->route('index-true-sale-post-admin')
         Route::get('/index_true', [AdminSalePostController::class, 'index_true'])->name('index-true-sale-post-admin');
+
+        // Khớp với return redirect()->route('index-false-sale-post-admin')
         Route::get('/index_false', [AdminSalePostController::class, 'index_false'])->name('index-false-sale-post-admin');
+
+        // Khớp với hành động Duyệt bài
         Route::patch('/approve/{id}', [AdminSalePostController::class, 'approve'])->name('approve-sale-post-admin');
+
         Route::get('/create', [AdminSalePostController::class, 'create'])->name('create-sale-post-admin');
         Route::post('/store', [AdminSalePostController::class, 'store'])->name('store-sale-post-admin');
         Route::get('/show/{id}', [AdminSalePostController::class, 'show'])->name('show-sale-post-admin');

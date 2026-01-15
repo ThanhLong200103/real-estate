@@ -161,7 +161,7 @@
 
     <div class="row">
         <div class="col-lg-8 pe-lg-5">
-            <div class="price-tag">{{ number_format($rentPosts->price) }} VNĐ <span class="text-muted fw-normal fs-6">/ tháng</span></div>
+            <div class="price-tag">{{ number_format($rentPosts->price) }} VNĐ <span class="text-muted fw-normal fs-6"></span></div>
 
             <div class="spec-card shadow-sm">
                 <div class="spec-item">
