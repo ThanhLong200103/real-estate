@@ -71,23 +71,28 @@ class SalePostController extends Controller
                     'address'      => $request->address,
                     'bedrooms'     => $request->bedrooms,
                     'bathrooms'    => $request->bathrooms,
-                    'is_furnished' => (bool)$request->is_furnished,
-                    'status'       => false, // MẶC ĐỊNH LÀ FALSE để tin vào danh sách chờ duyệt
+                    // Checkbox: true nếu được tích, false nếu không
+                    'is_furnished' => $request->has('is_furnished'),
+                    'status'       => $request->has('status'),
                 ]);
 
-                if ($request->hasFile('image_url')) {
-                    foreach ($request->file('image_url') as $image) {
+                // Lưu mảng ảnh (đổi từ image_url thành images cho khớp Blade)
+                if ($request->hasFile('images')) {
+                    foreach ($request->file('images') as $image) {
                         $path = $image->store('posts', 'public');
                         $sale->images()->create(['image_url' => $path]);
                     }
                 }
             });
 
-            return redirect()->route('index-false-sale-post-admin')
-                ->with('success', 'Bất động sản đã được gửi và đang chờ duyệt!');
+            // Điều hướng dựa trên việc admin có tích "Duyệt hiển thị ngay" hay không
+            $targetRoute = $request->has('status') ? 'index-true-sale-post-admin' : 'index-false-sale-post-admin';
+
+            return redirect()->route($targetRoute)
+                ->with('success', 'Bài đăng đã được xử lý thành công!');
         } catch (\Exception $e) {
             Log::error("Lỗi tạo BĐS: " . $e->getMessage());
-            return back()->withInput()->with('error', 'Có lỗi xảy ra: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Có lỗi xảy rả: ' . $e->getMessage());
         }
     }
 

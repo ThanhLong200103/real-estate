@@ -24,19 +24,17 @@ class StoreSalePostRequest extends FormRequest
         return [
             'title' => 'required|string|max:200',
             'description' => 'required|string',
-
             'price' => 'required|numeric|min:0',
-
             'area' => 'required|numeric|min:0',
-
             'address' => 'required|string|max:255',
-
             'bedrooms' => 'required|integer|min:0',
             'bathrooms' => 'required|integer|min:0',
 
-            'is_furnished' => 'nullable|boolean',
-            'image_url.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'image_url'   => 'nullable|array',
+            // Thay đổi tại đây
+            'is_furnished' => 'nullable',
+            'status'       => 'nullable',
+            'images.*'     => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'images'       => 'nullable|array',
         ];
     }
 }
