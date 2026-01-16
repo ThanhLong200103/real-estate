@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
     <style>
         :root {
@@ -133,6 +135,18 @@
             border-radius: 22px;
             border: 1px solid #edf2f7;
         }
+
+        /* THÊM: Style cho Marker Map */
+        .custom-purple-marker { display: flex; justify-content: center; align-items: center; }
+        .marker-pin {
+            width: 30px; height: 30px; border-radius: 50% 50% 50% 0;
+            background: var(--primary); position: absolute;
+            transform: rotate(-45deg); left: 50%; top: 50%; margin: -15px 0 0 -15px;
+        }
+        .marker-pin::after {
+            content: ''; width: 14px; height: 14px; margin: 8px 0 0 8px;
+            background: #fff; position: absolute; border-radius: 50%;
+        }
     </style>
 </head>
 <body>
@@ -159,7 +173,6 @@
                 <p class="text-white-50 small m-0 mt-1">Nơi kết nối giá trị thực của bất động sản</p>
             </div>
             <div class="d-flex gap-3">
-                {{-- ĐÃ SỬA: user-manage-sale-post -> user-sale-post-index --}}
                 <a href="{{ route('user-sale-post-index') }}" class="btn-custom btn-glass"><i class="fas fa-th-list"></i> Quản lý tin</a>
                 
                 @if(auth()->check() && (int)auth()->id() === (int)$salePost->user_id)
@@ -269,6 +282,14 @@
                     <div class="text-secondary leading-relaxed fs-6" style="white-space: pre-line; text-align: justify; line-height: 1.8;">
                         {{ $salePost->description }}
                     </div>
+                </div>
+            </div>
+
+            <div class="detail-card">
+                <h5 class="fw-800 mb-4"><i class="fas fa-map-marked-alt text-primary me-2"></i>Vị trí bản đồ</h5>
+                <div id="map" style="width: 100%; height: 400px; border-radius: 20px; z-index: 1;"></div>
+                <div class="mt-3 p-3 bg-light rounded-4">
+                    <p class="text-muted small m-0"><i class="fas fa-info-circle me-1"></i> Vị trí được xác định tự động theo địa chỉ: <strong>{{ $salePost->address }}</strong></p>
                 </div>
             </div>
 
@@ -397,5 +418,45 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const address = "{{ $salePost->address }}";
+    const title = "{{ $salePost->title }}";
+
+    // Mặc định trung tâm TP.HCM
+    const map = L.map('map').setView([10.762622, 106.660172], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© EstateHub | OpenStreetMap'
+    }).addTo(map);
+
+    // Geocoding qua Nominatim
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.length > 0) {
+                const lat = data[0].lat;
+                const lon = data[0].lon;
+                map.setView([lat, lon], 16);
+
+                const icon = L.divIcon({
+                    className: 'custom-purple-marker',
+                    html: "<div class='marker-pin'></div><i class='fas fa-home' style='position:relative; color:white; z-index:10; font-size:10px; margin-top:-4px;'></i>",
+                    iconSize: [30, 42],
+                    iconAnchor: [15, 42]
+                });
+
+                L.marker([lat, lon], { icon: icon }).addTo(map)
+                    .bindPopup(`<div class="p-1"><b style="color:#6c5ce7">${title}</b><br><small class="text-muted">${address}</small></div>`)
+                    .openPopup();
+            }
+        })
+        .catch(error => console.error('Error:', error));
+});
+</script>
+
 </body>
 </html>
