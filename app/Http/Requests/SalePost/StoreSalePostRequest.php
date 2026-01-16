@@ -16,25 +16,39 @@ class StoreSalePostRequest extends FormRequest
 
     /**
      * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
-            'title' => 'required|string|max:200',
-            'description' => 'required|string',
-            'price' => 'required|numeric|min:0',
-            'area' => 'required|numeric|min:0',
-            'address' => 'required|string|max:255',
-            'bedrooms' => 'required|integer|min:0',
-            'bathrooms' => 'required|integer|min:0',
+            'type'         => 'required|in:sale,rent',
+            'category_id'  => 'required|exists:categories,id', // Đã đổi tên và kiểu kiểm tra
+            'title'        => 'required|string|max:200',
+            'description'  => 'required|string',
+            'price'        => 'required|numeric|min:0',
+            'area'         => 'required|numeric|min:0',
+            'address'      => 'required|string|max:255',
+            'bedrooms'     => 'nullable|numeric|min:0',
+            'bathrooms'    => 'nullable|numeric|min:0',
+            'is_furnished' => 'nullable|in:0,1',
+            'images'       => 'required|array|min:1', // Bắt buộc phải có ít nhất 1 ảnh
+            'images.*'     => 'image|mimes:jpg,jpeg,png,webp|max:5120',
+        ];
+    }
 
-            // Thay đổi tại đây
-            'is_furnished' => 'nullable',
-            'status'       => 'nullable',
-            'images.*'     => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'images'       => 'nullable|array',
+    public function messages(): array
+    {
+        return [
+            'type.required'        => 'Vui lòng chọn hình thức giao dịch (Bán hoặc Cho thuê).',
+            'category_id.required' => 'Vui lòng chọn loại hình bất động sản.',
+            'category_id.exists'   => 'Danh mục đã chọn không tồn tại.',
+            'title.required'       => 'Tiêu đề không được để trống.',
+            'price.required'       => 'Giá không được để trống.',
+            'area.required'        => 'Diện tích không được để trống.',
+            'address.required'     => 'Địa chỉ không được để trống.',
+            'description.required' => 'Mô tả chi tiết không được để trống.',
+            'images.required'      => 'Bạn phải tải lên ít nhất một hình ảnh thực tế.',
+            'images.*.image'       => 'Tệp tải lên phải là hình ảnh.',
+            'images.*.max'         => 'Dung lượng mỗi ảnh không được quá 5MB.',
         ];
     }
 }

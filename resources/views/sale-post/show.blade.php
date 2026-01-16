@@ -42,14 +42,8 @@
      */
     $convertImage = function($path) {
         if (!$path) return 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1200&q=80';
-        
-        // 1. Nếu là URL tuyệt đối
         if (filter_var($path, FILTER_VALIDATE_URL)) return $path;
-        
-        // 2. Nếu là ảnh Seeder (trong public/images)
         if (str_starts_with($path, 'images/')) return asset($path);
-        
-        // 3. Nếu là ảnh Storage (User upload)
         return asset('storage/' . $path);
     };
     
@@ -118,26 +112,20 @@
 
     {{-- PHOTO GALLERY --}}
     <div class="gallery-grid rounded-[32px] overflow-hidden shadow-2xl mb-12 border-[6px] border-white bg-gray-100">
-        {{-- Ảnh chính --}}
         <div class="gallery-item-main overflow-hidden group">
             <img src="{{ $convertImage($imgs[0]->image_url ?? null) }}" 
                  class="w-full h-full object-cover group-hover:scale-105 transition duration-700"
                  onerror="this.src='https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1200&q=80'">
         </div>
-        
-        {{-- Ảnh phụ 1 --}}
         <div class="overflow-hidden group">
             <img src="{{ $convertImage($imgs[1]->image_url ?? ($imgs[0]->image_url ?? null)) }}" 
                  class="w-full h-full object-cover group-hover:scale-105 transition duration-700"
                  onerror="this.src='https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80'">
         </div>
-
-        {{-- Ảnh phụ 2 + Overlay nếu có nhiều ảnh --}}
         <div class="relative overflow-hidden group">
             <img src="{{ $convertImage($imgs[2]->image_url ?? ($imgs[0]->image_url ?? null)) }}" 
                  class="w-full h-full object-cover group-hover:scale-105 transition duration-700"
                  onerror="this.src='https://images.unsplash.com/photo-1448630360428-6542e085c95e?auto=format&fit=crop&w=800&q=80'">
-            
             @if($imgs->count() > 3)
                 <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                     <span class="text-white font-bold underline italic">Xem tất cả {{ $imgs->count() }} ảnh</span>
@@ -182,13 +170,102 @@
             </div>
 
             {{-- CẢNH BÁO --}}
-            <div class="p-6 bg-slate-900 rounded-[32px] text-white flex gap-5 items-center">
+            <div class="p-6 bg-slate-900 rounded-[32px] text-white flex gap-5 items-center mb-12">
                 <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-xl shrink-0">
                     <i class="fas fa-user-shield text-indigo-400"></i>
                 </div>
                 <p class="text-sm text-slate-300 font-medium">
                     <strong class="text-white">Lưu ý an toàn:</strong> Tuyệt đối không đặt cọc hoặc chuyển khoản trước khi xem nhà và xác nhận pháp lý chính chủ.
                 </p>
+            </div>
+
+            {{-- PHẦN BÌNH LUẬN (GUEST ĐỌC ĐƯỢC) --}}
+            <div class="pt-12 border-t border-gray-100">
+                <h3 class="text-2xl font-black mb-8 flex items-center gap-3">
+                    <span class="w-2 h-8 bg-indigo-600 rounded-full"></span>
+                    Hỏi đáp & Bình luận
+                    <span class="text-sm font-medium text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+                        {{ $rentPosts->comments->count() }}
+                    </span>
+                </h3>
+
+                {{-- Khối nhập bình luận --}}
+                @auth
+                    <div class="bg-white border border-gray-100 p-6 rounded-[32px] shadow-sm mb-10 transition hover:border-indigo-100">
+                        <form action="{{ route('comments.store', $rentPosts->id) }}" method="POST">
+                            @csrf
+                            <div class="flex gap-4">
+                                <div class="shrink-0">
+                                    <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=6366f1&color=fff" 
+                                         class="w-10 h-10 rounded-2xl shadow-sm">
+                                </div>
+                                <div class="flex-1 text-right">
+                                    <textarea name="content" rows="3" required
+                                              class="w-full bg-gray-50 border border-transparent focus:border-indigo-500 focus:bg-white rounded-2xl p-4 text-gray-700 outline-none transition duration-300 placeholder:text-gray-400"
+                                              placeholder="Để lại câu hỏi cho chủ nhà..."></textarea>
+                                    <button type="submit" 
+                                            class="mt-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-xl transition duration-300 inline-flex items-center gap-2 text-sm shadow-lg shadow-indigo-100 active:scale-95">
+                                        Gửi bình luận <i class="fas fa-paper-plane text-[10px]"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                @else
+                    <div class="bg-indigo-50/50 border border-indigo-100/50 p-8 rounded-[32px] text-center mb-10 group transition hover:bg-indigo-50">
+                        <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm group-hover:scale-110 transition">
+                            <i class="fas fa-lock text-indigo-500"></i>
+                        </div>
+                        <p class="text-indigo-900 font-bold mb-4 text-sm">Đăng nhập để đặt câu hỏi cho chủ nhà</p>
+                        <a href="{{ route('login-form') }}" class="inline-block bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest px-8 py-3 rounded-full hover:bg-indigo-700 transition shadow-lg shadow-indigo-100">
+                            Đăng nhập ngay
+                        </a>
+                    </div>
+                @endauth
+
+                {{-- Danh sách bình luận --}}
+                <div class="space-y-6">
+                    @forelse($rentPosts->comments as $comment)
+                        <div class="flex gap-4">
+                            <div class="shrink-0">
+                                <img src="https://ui-avatars.com/api/?name={{ urlencode($comment->user->name) }}&background=f1f5f9&color=64748b" 
+                                     class="w-10 h-10 rounded-2xl border border-gray-100 shadow-sm">
+                            </div>
+                            <div class="flex-1">
+                                <div class="bg-white border border-gray-100 p-5 rounded-[24px] shadow-sm hover:shadow-md transition duration-300">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <h4 class="font-black text-gray-900 text-sm">{{ $comment->user->name }}</h4>
+                                        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">
+                                            {{ $comment->created_at->diffForHumans() }}
+                                        </span>
+                                    </div>
+                                    <p class="text-gray-600 text-[15px] leading-relaxed">
+                                        {{ $comment->content }}
+                                    </p>
+                                </div>
+                                
+                                {{-- Nút xóa (Nếu là chủ comment hoặc admin) --}}
+                                @auth
+                                    @if(auth()->id() === $comment->user_id || auth()->user()->role === 'admin')
+                                        <div class="mt-2 flex gap-4 px-2">
+                                            <form action="{{ route('comments.destroy', $comment->id) }}" method="POST">
+                                                @csrf @method('DELETE')
+                                                <button type="submit" class="text-[10px] font-black text-rose-400 hover:text-rose-600 uppercase tracking-widest flex items-center gap-1 transition" onclick="return confirm('Bạn có chắc chắn muốn xóa bình luận này?')">
+                                                    <i class="fas fa-trash-alt"></i> Xóa
+                                                </button>
+                                            </form>
+                                        </div>
+                                    @endif
+                                @endauth
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center py-12 bg-gray-50/50 rounded-[32px] border border-dashed border-gray-200">
+                            <i class="far fa-comments text-4xl mb-3 text-gray-300"></i>
+                            <p class="text-sm font-bold text-gray-400">Chưa có bình luận nào. Hãy là người đầu tiên đặt câu hỏi!</p>
+                        </div>
+                    @endforelse
+                </div>
             </div>
         </div>
 

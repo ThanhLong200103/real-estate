@@ -3,107 +3,256 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat - EstateHub</title>
+    <title>Chat với {{ (auth()->id() == $contact->user_one_id) ? $contact->userTwo->name : $contact->userOne->name }} - EstateHub</title>
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <style>
-        #chat-box::-webkit-scrollbar { width: 6px; }
-        #chat-box::-webkit-scrollbar-track { background: transparent; }
-        #chat-box::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        :root {
+            --primary: #6c5ce7;
+            --primary-light: #a29bfe;
+            --dark: #2d3436;
+            --light-bg: #f8faff;
+            --white: #ffffff;
+        }
+
+        body { 
+            background-color: var(--light-bg); 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Khung chat chính */
+        .chat-container {
+            max-width: 900px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 40px);
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        /* Header của Chat */
+        .chat-header {
+            background: var(--dark);
+            background-image: linear-gradient(rgba(108, 92, 231, 0.1), rgba(0, 0, 0, 0.1)), url('https://www.transparenttextures.com/patterns/cubes.png');
+            padding: 20px 25px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .chat-avatar {
+            width: 50px; height: 50px;
+            background: var(--primary);
+            border-radius: 15px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 20px;
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
+        }
+
+        /* Thanh thông tin BĐS đang chat */
+        .post-preview {
+            background: #f1f0ff;
+            padding: 12px 20px;
+            border-bottom: 1px solid rgba(108, 92, 231, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .post-img {
+            width: 55px; height: 55px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 2px solid white;
+        }
+
+        /* Nội dung tin nhắn */
+        #chat-box {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 25px;
+            background-color: #fcfcff;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .msg-bubble {
+            max-width: 75%;
+            padding: 12px 18px;
+            border-radius: 20px;
+            font-size: 14px;
+            line-height: 1.6;
+            position: relative;
+            font-weight: 500;
+        }
+
+        .msg-sent {
+            align-self: flex-end;
+            background: var(--primary);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .msg-received {
+            align-self: flex-start;
+            background: white;
+            color: var(--dark);
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+            border: 1px solid #eee;
+        }
+
+        .msg-time {
+            font-size: 9px;
+            opacity: 0.7;
+            display: block;
+            margin-top: 5px;
+            text-transform: uppercase;
+        }
+
+        /* Ô nhập liệu */
+        .chat-footer {
+            padding: 20px 25px;
+            background: white;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .input-group-custom {
+            display: flex;
+            gap: 10px;
+            background: #f8faff;
+            padding: 8px;
+            border-radius: 20px;
+            border: 1px solid #eee;
+        }
+
+        .input-group-custom input {
+            border: none;
+            background: transparent;
+            padding: 10px 15px;
+            flex-grow: 1;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .btn-send {
+            width: 45px; height: 45px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            transition: 0.3s;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .btn-send:hover {
+            transform: scale(1.05);
+            background: #5a4bcf;
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
+        }
+
+        /* Custom Scrollbar */
+        #chat-box::-webkit-scrollbar { width: 5px; }
+        #chat-box::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 10px; }
     </style>
 </head>
-<body class="bg-gray-100 h-screen flex flex-col font-[Plus_Jakarta_Sans,sans-serif]">
+<body>
 
-    @php
-        /** Logic xử lý ảnh đa nguồn */
-        $getPostImage = function($post) {
-            $firstImg = $post->images->first();
-            if (!$firstImg) return 'https://placehold.co/600x400?text=No+Image';
-            
-            $path = $firstImg->image_url;
-            if (filter_var($path, FILTER_VALIDATE_URL)) return $path;
-            if (strpos($path, 'images/') === 0) return asset($path);
-            return asset('storage/' . $path);
-        };
-    @endphp
+@php
+    $otherUser = (auth()->id() == $contact->user_one_id) ? $contact->userTwo : $contact->userOne;
+    
+    $getPostImage = function($post) {
+        $firstImg = $post->images->first();
+        if (!$firstImg) return 'https://placehold.co/100x100?text=No+Image';
+        $path = $firstImg->image_url ?? $firstImg->image_path;
+        if (filter_var($path, FILTER_VALIDATE_URL)) return $path;
+        return asset('storage/' . $path);
+    };
+@endphp
 
-    <div class="container mx-auto max-w-4xl h-full flex flex-col p-4">
-        <div class="bg-white shadow-xl rounded-2xl flex flex-col h-full overflow-hidden border border-gray-200">
-            
-            <div class="bg-blue-600 p-4 text-white flex justify-between items-center shadow-md z-10">
-                <div class="flex items-center gap-3">
-                    <a href="{{ route('contacts.index') }}" class="hover:bg-blue-700 p-2 rounded-full transition">
-                        <i class="fas fa-arrow-left"></i>
-                    </a>
-                    <div class="flex flex-col">
-                        <h2 class="font-bold text-lg leading-none">
-                            @php $otherUser = (auth()->id() == $contact->user_one_id) ? $contact->userTwo : $contact->userOne; @endphp
-                            {{ $otherUser->name }}
-                        </h2>
-                        <span class="text-[10px] text-blue-100 mt-1 flex items-center gap-1">
-                            <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span> Trực tuyến
-                        </span>
-                    </div>
+<div class="container-fluid h-100">
+    <div class="chat-container">
+        
+        <div class="chat-header">
+            <div class="user-info">
+                <a href="{{ route('contacts.index') }}" class="text-white me-2">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+                <div class="chat-avatar">
+                    {{ strtoupper(substr($otherUser->name, 0, 1)) }}
+                </div>
+                <div>
+                    <h6 class="m-0 fw-800">{{ $otherUser->name }}</h6>
+                    <small class="opacity-75"><i class="fas fa-circle text-success me-1" style="font-size: 8px;"></i> Trực tuyến</small>
                 </div>
             </div>
-
-            @if($contact->salePost)
-            <div class="flex items-center p-3 bg-blue-50 border-b border-blue-100 gap-4 transition-all hover:bg-blue-100/50">
-                <div class="flex-shrink-0">
-                    <img src="{{ $getPostImage($contact->salePost) }}" 
-                         class="w-14 h-14 object-cover rounded-xl shadow-sm border-2 border-white"
-                         onerror="this.src='https://placehold.co/600x400?text=Error'">
-                </div>
-                <div class="flex-grow min-w-0">
-                    <h3 class="font-bold text-gray-800 text-sm truncate uppercase tracking-tight">
-                        {{ $contact->salePost->title }}
-                    </h3>
-                    <p class="text-sm text-red-600 font-extrabold">
-                        {{ number_format($contact->salePost->price) }} <span class="text-[10px]">VND</span>
-                    </p>
-                </div>
-                <div class="flex-shrink-0">
-                    <a href="{{ route('user-sale-post-show', $contact->salePost->id) }}" 
-                       class="inline-flex items-center gap-1 text-xs bg-white text-blue-600 border border-blue-200 px-3 py-2 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm font-bold">
-                        <i class="fas fa-external-link-alt text-[10px]"></i> Xem tin
-                    </a>
-                </div>
-            </div>
-            @endif
-
-            <div class="flex-grow overflow-y-auto p-4 space-y-4 bg-gray-50/50" id="chat-box">
-                @foreach($contact->messages as $message)
-                    <div class="flex {{ $message->sender_id == auth()->id() ? 'justify-end' : 'justify-start' }}">
-                        <div class="max-w-[80%] md:max-w-[70%] px-4 py-2.5 rounded-2xl shadow-sm relative {{ $message->sender_id == auth()->id() ? 'bg-blue-600 text-white rounded-br-none' : 'bg-white text-gray-800 rounded-tl-none border border-gray-200' }}">
-                            <p class="text-[14px] leading-relaxed">{{ $message->message }}</p>
-                            <span class="text-[9px] opacity-70 mt-1 block {{ $message->sender_id == auth()->id() ? 'text-right' : 'text-left' }}">
-                                {{ $message->created_at->format('H:i') }}
-                            </span>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-
-            <div class="p-4 bg-white border-t border-gray-100">
-                <form action="{{ route('contacts.send', $contact->id) }}" method="POST" class="flex gap-2 items-center">
-                    @csrf
-                    <div class="flex-grow relative">
-                        <input type="text" name="message" autocomplete="off" placeholder="Nhập tin nhắn..." 
-                               class="w-full border border-gray-200 bg-gray-50 rounded-2xl px-5 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all text-sm" required>
-                    </div>
-                    <button type="submit" class="bg-blue-600 text-white w-12 h-12 rounded-2xl flex items-center justify-center hover:bg-blue-700 hover:scale-105 transition-all shadow-lg shadow-blue-200 shrink-0">
-                        <i class="fas fa-paper-plane text-lg"></i>
-                    </button>
-                </form>
+            <div class="nav-actions bg-transparent p-0 border-0 shadow-none">
+                <a href="{{ route('home') }}" class="text-white opacity-75 hover-opacity-100"><i class="fas fa-home"></i></a>
             </div>
         </div>
-    </div>
 
-    <script>
-        const chatBox = document.getElementById('chat-box');
-        window.onload = () => {
-            chatBox.scrollTop = chatBox.scrollHeight;
-        };
-    </script>
+        @if($contact->salePost)
+        <div class="post-preview">
+            <img src="{{ $getPostImage($contact->salePost) }}" class="post-img shadow-sm">
+            <div class="flex-grow-1 overflow-hidden">
+                <div class="fw-800 text-dark text-truncate small uppercase">{{ $contact->salePost->title }}</div>
+                <div class="text-primary fw-bold small">{{ number_format($contact->salePost->price) }} <span style="font-size: 10px">VND</span></div>
+            </div>
+            <a href="{{ route('create-sale-show', $contact->salePost->id) }}" class="btn btn-sm btn-white border rounded-pill px-3 fw-bold small shadow-sm">
+                Chi tiết
+            </a>
+        </div>
+        @endif
+
+        <div id="chat-box">
+            @foreach($contact->messages as $message)
+                <div class="msg-bubble {{ $message->sender_id == auth()->id() ? 'msg-sent' : 'msg-received' }}">
+                    {{ $message->message }}
+                    <span class="msg-time">{{ $message->created_at->format('H:i') }}</span>
+                </div>
+            @endforeach
+        </div>
+
+        <div class="chat-footer">
+            <form action="{{ route('contacts.send', $contact->id) }}" method="POST">
+                @csrf
+                <div class="input-group-custom">
+                    <input type="text" name="message" autocomplete="off" placeholder="Hỏi về bất động sản này..." required>
+                    <button type="submit" class="btn-send">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Tự động cuộn xuống cuối khi load trang
+    const chatBox = document.getElementById('chat-box');
+    window.onload = () => {
+        chatBox.scrollTop = chatBox.scrollHeight;
+    };
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

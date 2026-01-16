@@ -2,63 +2,22 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AdminAction;
 use Illuminate\Http\Request;
 
+// Dòng số 8 phải là AdminActionController, không được là AdminAction
 class AdminActionController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Hiển thị danh sách nhật ký
      */
     public function index()
     {
-        //
-    }
+        // Lấy dữ liệu từ Model AdminAction
+        $actions = AdminAction::with('admin')->latest()->paginate(20);
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        // Thêm dòng này nếu muốn hiện thông báo khi vừa vào trang nhật ký
+        return view('admin.action.index', compact('actions'))
+            ->with('success', 'Tải dữ liệu nhật ký thành công!');
     }
 }

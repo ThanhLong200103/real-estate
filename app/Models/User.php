@@ -88,4 +88,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(News::class, 'author_id');
     }
+    public function favoritePosts()
+    {
+        // Mối quan hệ nhiều-nhiều với SalePost thông qua bảng favorites
+        return $this->belongsToMany(SalePost::class, 'favorites', 'user_id', 'sale_post_id')->withTimestamps();
+    }
 }

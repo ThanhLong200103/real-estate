@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SalePost\NewsRequest;
 use App\Models\News;
+use App\Models\AdminAction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -12,15 +13,10 @@ use Illuminate\Support\Facades\Storage;
 
 class NewsController extends Controller
 {
-    // Hiển thị danh sách tin tức trong Admin
     public function index()
     {
-        // Lấy danh sách tin tức (News)
         $rentPosts = News::with('images')->latest()->paginate(10);
-
-        // Đếm số lượng bài đăng Bất động sản đang chờ duyệt để hiển thị trên Sidebar
         $pendingPostsCount = \App\Models\SalePost::where('status', false)->count();
-
         return view('admin.news.index', compact('rentPosts', 'pendingPostsCount'));
     }
 
@@ -39,15 +35,19 @@ class NewsController extends Controller
                 'status' => true,
             ]);
 
-            // Lưu ý: Kiểm tra chính xác tên name="image_url" hay "image_array_new" từ form
             if ($request->hasFile('image_array_new')) {
                 foreach ($request->file('image_array_new') as $image) {
                     $path = $image->store('posts', 'public');
-                    $sale->images()->create([
-                        'image_url' => $path
-                    ]);
+                    $sale->images()->create(['image_url' => $path]);
                 }
             }
+
+            // Ghi Log Hành Động
+            AdminAction::create([
+                'admin_id' => Auth::id(),
+                'action_type' => 'CREATE',
+                'description' => "Đã tạo tin tức mới: " . $request->title,
+            ]);
         });
 
         return redirect()->route('index-news-admin')->with('success', 'Tin tức đã được tạo!');
@@ -55,13 +55,8 @@ class NewsController extends Controller
 
     public function show($id)
     {
-        // Eager load images để tránh lỗi undefined
         $post = News::with('images')->findOrFail($id);
-
-        // Đếm số lượng tin chờ duyệt cho Sidebar
         $pendingPostsCount = \App\Models\SalePost::where('status', false)->count();
-
-        // Truyền BIẾN $post vào view
         return view('admin.news.show', compact('post', 'pendingPostsCount'));
     }
 
@@ -83,20 +78,22 @@ class NewsController extends Controller
             ]);
 
             if ($request->hasFile('image_array_new')) {
-                // Xóa ảnh cũ
                 foreach ($new->images as $oldImage) {
                     Storage::disk('public')->delete($oldImage->image_url);
                     $oldImage->delete();
                 }
-
-                // Lưu ảnh mới
                 foreach ($request->file('image_array_new') as $image) {
                     $path = $image->store('posts', 'public');
-                    $new->images()->create([
-                        'image_url' => $path
-                    ]);
+                    $new->images()->create(['image_url' => $path]);
                 }
             }
+
+            // Ghi Log Hành Động
+            AdminAction::create([
+                'admin_id' => Auth::id(),
+                'action_type' => 'UPDATE',
+                'description' => "Đã cập nhật tin tức ID #$new->id: " . $request->title,
+            ]);
         });
 
         return redirect()->route('index-news-admin')->with('success', 'Tin tức đã được cập nhật!');
@@ -105,13 +102,21 @@ class NewsController extends Controller
     public function destroy(string $id)
     {
         $news = News::findOrFail($id);
+        $title = $news->title;
 
-        // Xóa ảnh trong folder storage trước khi xóa record
-        foreach ($news->images as $image) {
-            Storage::disk('public')->delete($image->image_url);
-        }
+        DB::transaction(function () use ($news, $title) {
+            foreach ($news->images as $image) {
+                Storage::disk('public')->delete($image->image_url);
+            }
+            $news->delete();
 
-        $news->delete();
+            // Ghi Log Hành Động
+            AdminAction::create([
+                'admin_id' => Auth::id(),
+                'action_type' => 'DELETE',
+                'description' => "Đã xóa tin tức: " . $title,
+            ]);
+        });
 
         return redirect()->route('index-news-admin')->with('success', 'Xóa tin thành công');
     }

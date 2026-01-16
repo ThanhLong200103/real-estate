@@ -4,28 +4,86 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SalePost\StoreSalePostRequest;
 use App\Models\SalePost;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class SalePostController extends Controller
 {
-    // Trang chủ hiển thị tin đã được Admin duyệt
-    public function index()
+    /**
+     * Trang chủ hiển thị tin đã được duyệt + Bộ lọc tìm kiếm
+     */
+    public function index(Request $request)
     {
-        $rentPosts = SalePost::with('images')
-            ->where('status', true)
-            ->latest()
-            ->paginate(10);
+        // Lấy danh sách Categories để hiển thị ở Select box bộ lọc
+        $categories = Category::all();
 
-        return view('home', compact('rentPosts'));
+        // Eager loading 'category' và 'images' để tối ưu hiệu năng
+        $query = SalePost::with(['images', 'category'])->where('status', true);
+
+        // 1. Lọc theo từ khóa
+        if ($request->filled('keyword')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('title', 'like', '%' . $request->keyword . '%')
+                    ->orWhere('address', 'like', '%' . $request->keyword . '%');
+            });
+        }
+
+        // 2. Lọc theo hình thức (sale/rent)
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
+        // 3. Lọc theo ID danh mục mới
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        // 4. Lọc theo mức giá
+        if ($request->filled('price_range')) {
+            $price = $request->price_range;
+            if ($price === '10000000000+') {
+                $query->where('price', '>=', 10000000000);
+            } else {
+                $range = explode('-', $price);
+                if (count($range) == 2) {
+                    $query->whereBetween('price', [(float)$range[0], (float)$range[1]]);
+                }
+            }
+        }
+
+        // 5. Lọc theo diện tích
+        if ($request->filled('area_range')) {
+            $area = $request->area_range;
+            if ($area === '200+') {
+                $query->where('area', '>=', 200);
+            } else {
+                $range = explode('-', $area);
+                if (count($range) == 2) {
+                    $query->whereBetween('area', [(float)$range[0], (float)$range[1]]);
+                }
+            }
+        }
+
+        // 6. Lọc theo số phòng ngủ
+        if ($request->filled('bedrooms')) {
+            $query->where('bedrooms', '>=', $request->bedrooms);
+        }
+
+        $rentPosts = $query->latest()->paginate(12);
+
+        return view('home', compact('rentPosts', 'categories'));
     }
 
-    // MỚI: Trang danh sách tin của riêng User đang đăng nhập
+    /**
+     * Danh sách tin đăng cá nhân của User
+     */
     public function myPosts()
     {
-        $myPosts = SalePost::with('images')
+        $myPosts = SalePost::with(['images', 'category'])
             ->where('user_id', Auth::id())
             ->latest()
             ->paginate(10);
@@ -35,110 +93,146 @@ class SalePostController extends Controller
 
     public function create()
     {
-        return Auth::check() ? view('user.sale-post.create') : view('auth.login');
+        $categories = Category::all();
+        return view('user.sale-post.create', compact('categories'));
     }
 
     public function store(StoreSalePostRequest $request)
     {
-        DB::transaction(function () use ($request) {
-            $sale = SalePost::create([
-                'user_id'      => Auth::id(),
-                'title'        => $request->title,
-                'description'  => $request->description,
-                'price'        => $request->price,
-                'area'         => $request->area,
-                'address'      => $request->address,
-                'bedrooms'     => $request->bedrooms,
-                'bathrooms'    => $request->bathrooms,
-                'is_furnished' => $request->is_furnished,
-                'status'       => false, // Mặc định chờ duyệt
-            ]);
+        try {
+            DB::transaction(function () use ($request) {
+                $sale = SalePost::create([
+                    'user_id'      => Auth::id(),
+                    'type'         => $request->type,
+                    'category_id'  => $request->category_id,
+                    'title'        => $request->title,
+                    'description'  => $request->description,
+                    'price'        => $request->price ?? 0,
+                    'area'         => $request->area ?? 0,
+                    'address'      => $request->address,
+                    'bedrooms'     => (int)($request->bedrooms ?? 0),
+                    'bathrooms'    => (int)($request->bathrooms ?? 0),
+                    'is_furnished' => $request->has('is_furnished') ? 1 : 0,
+                    'status'       => false,
+                ]);
 
-            if ($request->hasFile('image_url')) {
-                foreach ($request->file('image_url') as $file) {
-                    $fileName = time() . '-' . $file->getClientOriginalName();
-                    $path = $file->storeAs('posts', $fileName, 'public');
-                    $sale->images()->create(['image_url' => $path]);
+                if ($request->hasFile('images')) {
+                    foreach ($request->file('images') as $file) {
+                        $path = $file->store('posts', 'public');
+                        $sale->images()->create(['image_url' => $path]);
+                    }
                 }
-            }
-        });
+            });
 
-        return redirect()->route('user-sale-post-index')->with('success', 'Tin đang chờ duyệt!');
+            return redirect()->route('user-sale-post-index')->with('success', 'Tin đăng đã được gửi, vui lòng chờ duyệt!');
+        } catch (\Exception $e) {
+            Log::error("User Store Post Error: " . $e->getMessage());
+            return back()->withInput()->with('error', 'Có lỗi xảy ra: ' . $e->getMessage());
+        }
     }
 
     public function show($id)
     {
-        $rentPosts = SalePost::with('images')->findOrFail($id);
+        $salePost = SalePost::with(['images', 'user', 'category', 'comments.user'])->findOrFail($id);
 
-        // KIỂM TRA QUYỀN TRUY CẬP
-        if (!$rentPosts->status) {
+        if (!$salePost->status) {
             $isAdmin = Auth::check() && strcasecmp(Auth::user()->role, 'admin') === 0;
-            $isOwner = Auth::check() && $rentPosts->user_id == Auth::id();
+            $isOwner = Auth::check() && $salePost->user_id == Auth::id();
 
-            // Nếu không phải admin và cũng không phải chủ tin -> Giấu tin đi
             if (!$isAdmin && !$isOwner) {
-                abort(404, 'Bài viết này đang chờ duyệt và không thể hiển thị công khai.');
+                abort(404, 'Bài viết đang chờ duyệt.');
             }
         }
 
-        return view('user.sale-post.show', compact('rentPosts'));
+        // Truyền đúng tên salePost ra view
+        return view('user.sale-post.show', compact('salePost'));
     }
 
     public function edit($id)
     {
+        // Eager load images để hiển thị trong trang edit
         $rentPost = SalePost::with('images')->findOrFail($id);
+        $categories = Category::all();
 
-        // Kiểm tra quyền sở hữu bài đăng
-        if ($rentPost->user_id == Auth::id()) {
-            return view('user.sale-post.edit', compact('rentPost'));
+        if ($rentPost->user_id !== Auth::id()) {
+            abort(403, 'Bạn không có quyền sửa tin này.');
         }
 
-        abort(403, 'Bạn không có quyền chỉnh sửa bài đăng này.');
+        return view('user.sale-post.edit', compact('rentPost', 'categories'));
     }
 
     public function update(Request $request, string $id)
     {
         $rentPost = SalePost::findOrFail($id);
 
-        if ($rentPost->user_id == Auth::id()) {
+        if ($rentPost->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        // Thêm Validation cho Category ID và các trường quan trọng
+        $request->validate([
+            'category_id' => 'required|exists:categories,id',
+            'title'       => 'required|string|max:255',
+            'type'        => 'required|in:sale,rent',
+            'price'       => 'required|numeric|min:0',
+            'area'        => 'required|numeric|min:0',
+            'address'     => 'required|string',
+            'description' => 'required|string',
+            'images.*'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+        ]);
+
+        try {
             DB::transaction(function () use ($request, $rentPost) {
                 $rentPost->update([
-                    'title'       => $request->title,
-                    'price'       => $request->price,
-                    'address'     => $request->address,
-                    'description' => $request->description,
-                    'area'        => $request->area,
-                    'status'      => false, // Sửa tin thì phải duyệt lại
+                    'type'         => $request->type,
+                    'category_id'  => $request->category_id,
+                    'title'        => $request->title,
+                    'price'        => $request->price,
+                    'address'      => $request->address,
+                    'description'  => $request->description,
+                    'area'         => $request->area,
+                    'bedrooms'     => (int)($request->bedrooms ?? 0),
+                    'bathrooms'    => (int)($request->bathrooms ?? 0),
+                    'is_furnished' => $request->has('is_furnished') ? 1 : 0,
+                    'status'       => false, // Sửa tin thì bắt duyệt lại
                 ]);
 
-                if ($request->hasFile('image_url')) {
+                // Nếu upload ảnh mới, xóa sạch ảnh cũ (theo logic file Blade bạn gửi)
+                if ($request->hasFile('images')) {
                     foreach ($rentPost->images as $oldImage) {
                         Storage::disk('public')->delete($oldImage->image_url);
                         $oldImage->delete();
                     }
-                    foreach ($request->file('image_url') as $image) {
+                    foreach ($request->file('images') as $image) {
                         $path = $image->store('posts', 'public');
                         $rentPost->images()->create(['image_url' => $path]);
                     }
                 }
             });
 
-            return redirect()->route('user-sale-post-index')->with('success', 'Cập nhật thành công!');
+            return redirect()->route('user-sale-post-index')->with('success', 'Cập nhật thành công, vui lòng chờ duyệt lại!');
+        } catch (\Exception $e) {
+            Log::error("User Update Post Error: " . $e->getMessage());
+            return back()->withInput()->with('error', 'Lỗi: ' . $e->getMessage());
         }
-        abort(403);
     }
 
     public function destroy(string $id)
     {
         $rentPost = SalePost::with('images')->findOrFail($id);
 
-        if ($rentPost->user_id == Auth::id()) {
+        if ($rentPost->user_id !== Auth::id() && strcasecmp(Auth::user()->role, 'admin') !== 0) {
+            abort(403);
+        }
+
+        DB::transaction(function () use ($rentPost) {
             foreach ($rentPost->images as $image) {
                 Storage::disk('public')->delete($image->image_url);
             }
+            $rentPost->images()->delete();
             $rentPost->delete();
-            return redirect()->route('user-sale-post-index')->with('success', 'Đã xóa tin đăng');
-        }
-        abort(403);
+        });
+
+        return redirect()->route('user-sale-post-index')->with('success', 'Đã xóa bài đăng thành công.');
     }
 }

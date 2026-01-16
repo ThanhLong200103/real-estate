@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Tạo bài đăng bán</title>
+    <title>Tạo bài đăng mới</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -20,12 +20,20 @@
         .alert-danger { border-radius: 16px; border: none; background-color: #fff5f5; color: #c53030; }
         .image-preview-container { border: 2px dashed #e5e7eb; border-radius: 16px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s; }
         .image-preview-container:hover { border-color: #6c5ce7; background: #f3f0ff; }
+        
+        /* Style cho nút chọn loại hình */
+        .type-selector { display: flex; gap: 10px; margin-bottom: 25px; background: #f1f3f5; padding: 5px; border-radius: 16px; }
+        .type-option { flex: 1; text-align: center; }
+        .type-option input { display: none; }
+        .type-option label { display: block; padding: 12px; border-radius: 12px; cursor: pointer; font-weight: 700; transition: all 0.3s; color: #64748b; }
+        .type-option input:checked + label.label-sale { background: white; color: #6c5ce7; shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .type-option input:checked + label.label-rent { background: white; color: #0dcaf0; shadow: 0 4px 10px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="form-card">
-        <h2 class="mb-4 fw-800 text-center">Tạo bài đăng bán</h2>
+        <h2 class="mb-4 fw-800 text-center">Tạo bài đăng mới</h2>
 
         @if ($errors->any())
             <div class="alert alert-danger mb-4">
@@ -40,6 +48,18 @@
         <form action="{{ route('store-sale-post') }}" method="POST" novalidate enctype="multipart/form-data">
             @csrf
 
+            <label class="form-label d-block text-center mb-3">Bạn muốn đăng tin loại nào?</label>
+            <div class="type-selector">
+                <div class="type-option">
+                    <input type="radio" name="type" id="type_sale" value="sale" {{ old('type', 'sale') == 'sale' ? 'checked' : '' }}>
+                    <label for="type_sale" class="label-sale"><i class="fas fa-hand-holding-usd me-2"></i>Cần bán</label>
+                </div>
+                <div class="type-option">
+                    <input type="radio" name="type" id="type_rent" value="rent" {{ old('type') == 'rent' ? 'checked' : '' }}>
+                    <label for="type_rent" class="label-rent"><i class="fas fa-key me-2"></i>Cho thuê</label>
+                </div>
+            </div>
+
             <div class="mb-4">
                 <label class="form-label">Tiêu đề</label>
                 <input type="text" name="title" class="form-control" placeholder="Ví dụ: Căn hộ cao cấp tại Quận 1" value="{{ old('title') }}" required>
@@ -53,7 +73,7 @@
             <div class="row">
                 <div class="col-md-6 mb-4">
                     <label class="form-label">Giá (VND)</label>
-                    <input type="number" name="price" class="form-control" placeholder="Nhập giá bán" value="{{ old('price') }}" required>
+                    <input type="number" name="price" class="form-control" placeholder="Nhập giá" value="{{ old('price') }}" required>
                 </div>
 
                 <div class="col-md-6 mb-4">
@@ -70,12 +90,12 @@
             <div class="row">
                 <div class="col-md-6 mb-4">
                     <label class="form-label">Phòng ngủ</label>
-                    <input type="number" name="bedrooms" class="form-control" placeholder="Số lượng" value="{{ old('bedrooms') }}">
+                    <input type="number" name="bedrooms" class="form-control" placeholder="Số lượng" value="{{ old('bedrooms', 0) }}">
                 </div>
 
                 <div class="col-md-6 mb-4">
                     <label class="form-label">Phòng tắm</label>
-                    <input type="number" name="bathrooms" class="form-control" placeholder="Số lượng" value="{{ old('bathrooms') }}">
+                    <input type="number" name="bathrooms" class="form-control" placeholder="Số lượng" value="{{ old('bathrooms', 0) }}">
                 </div>
             </div>
 
@@ -92,7 +112,7 @@
                 <div class="image-preview-container" onclick="document.getElementById('image_input').click()">
                     <i class="fas fa-cloud-upload-alt text-muted mb-2" style="font-size: 2rem;"></i>
                     <p class="mb-0 text-muted">Nhấn để tải lên hoặc kéo thả ảnh vào đây</p>
-                    <input type="file" name="image_url[]" id="image_input" accept="image/*" multiple hidden onchange="updateFileName(this)">
+                    <input type="file" name="images[]" id="image_input" accept="image/*" multiple hidden onchange="updateFileName(this)">
                     <div id="file-count" class="mt-2 fw-bold text-primary"></div>
                 </div>
                 <small class="text-muted mt-2 d-block">* Hỗ trợ định dạng: JPG, PNG. Dung lượng tối đa 2MB/ảnh.</small>
