@@ -88,18 +88,19 @@
                                     <span class="text-truncate">{{ Str::limit($post->address, 35) }}</span>
                                 </div>
 
-                                {{-- PHẦN CẬP NHẬT: Badge Loại hình --}}
+                                {{-- PHẦN CẬP NHẬT: Badge Loại hình theo yêu cầu --}}
                                 <div class="mb-2">
                                     @php
-                                        $cat = match($post->category) {
-                                            'apartment' => ['text' => 'Căn hộ', 'icon' => 'fa-building'],
-                                            'house'     => ['text' => 'Nhà phố', 'icon' => 'fa-home'],
-                                            'land'      => ['text' => 'Đất nền', 'icon' => 'fa-map-marked-alt'],
-                                            default     => ['text' => 'Khác', 'icon' => 'fa-tag'],
+                                        $categoryName = $post->category->name ?? 'Khác';
+                                        $icon = match($categoryName) {
+                                            'Căn hộ'  => 'fa-building',
+                                            'Nhà phố' => 'fa-home',
+                                            'Đất nền' => 'fa-map-marked-alt',
+                                            default   => 'fa-tag',
                                         };
                                     @endphp
                                     <span class="badge bg-white text-dark border fw-bold shadow-sm" style="font-size: 0.65rem; padding: 4px 8px;">
-                                        <i class="fas {{ $cat['icon'] }} me-1 text-primary"></i>{{ $cat['text'] }}
+                                        <i class="fas {{ $icon }} me-1 text-primary"></i>{{ $categoryName }}
                                     </span>
                                 </div>
 

@@ -68,18 +68,22 @@
                         <td>
                             <div class="fw-bold text-dark mb-1">{{ Str::limit($post->title, 50) }}</div>
                             
-                            {{-- PHẦN CẬP NHẬT: Thêm Badge Loại hình tại đây --}}
+                            {{-- PHẦN CẬP NHẬT: Badge Loại hình lấy trực tiếp từ Database --}}
                             <div class="mb-2 d-flex gap-1">
                                 @php
-                                    $catLabel = match($post->category) {
-                                        'apartment' => ['text' => 'Căn hộ', 'class' => 'bg-primary-subtle text-primary'],
-                                        'house'     => ['text' => 'Nhà phố', 'class' => 'bg-info-subtle text-info'],
-                                        'land'      => ['text' => 'Đất nền', 'class' => 'bg-success-subtle text-success'],
-                                        default     => ['text' => 'Khác', 'class' => 'bg-secondary-subtle text-secondary'],
+                                    // Lấy tên từ quan hệ category
+                                    $categoryName = $post->category->name ?? 'Chưa phân loại';
+                                    
+                                    // Gán màu sắc dựa trên tên danh mục
+                                    $badgeClass = match($categoryName) {
+                                        'Căn hộ'  => 'bg-primary-subtle text-primary',
+                                        'Nhà phố' => 'bg-info-subtle text-info',
+                                        'Đất nền' => 'bg-success-subtle text-success',
+                                        default    => 'bg-secondary-subtle text-secondary',
                                     };
                                 @endphp
-                                <span class="badge {{ $catLabel['class'] }} border-0 fw-bold" style="font-size: 0.6rem; padding: 3px 8px;">
-                                    <i class="fas fa-tag me-1"></i>{{ $catLabel['text'] }}
+                                <span class="badge {{ $badgeClass }} border-0 fw-bold" style="font-size: 0.6rem; padding: 3px 8px;">
+                                    <i class="fas fa-tag me-1"></i>{{ $categoryName }}
                                 </span>
                             </div>
 
