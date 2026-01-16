@@ -156,7 +156,7 @@
 
                 <div class="mb-4">
                     <label class="form-label">Mô tả nội dung <span class="text-danger">*</span></label>
-                    <textarea name="description" class="form-control" rows="6" required>{{ old('description', $rentPost->description) }}</textarea>
+                    <textarea name="description" id="description" class="form-control" required>{{ old('description', $rentPost->description) }}</textarea>
                 </div>
 
                 <div class="section-title">4. Đặc điểm Bất động sản</div>

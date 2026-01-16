@@ -29,7 +29,7 @@ class StoreSalePostRequest extends FormRequest
             'address'      => 'required|string|max:255',
             'bedrooms'     => 'nullable|numeric|min:0',
             'bathrooms'    => 'nullable|numeric|min:0',
-            'is_furnished' => 'nullable|in:0,1',
+            'is_furnished' => 'nullable|boolean',
             'images'       => 'required|array|min:1', // Bắt buộc phải có ít nhất 1 ảnh
             'images.*'     => 'image|mimes:jpg,jpeg,png,webp|max:5120',
         ];

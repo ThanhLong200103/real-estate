@@ -83,7 +83,7 @@
 
                     <div class="mb-0">
                         <label class="form-label">Mô tả nội dung</label>
-                        <textarea name="description" class="form-control" rows="8" required>{{ old('description', $item->description) }}</textarea>
+                        <textarea name="description" id="description" class="form-control" required>{{ old('description', $item->description) }}</textarea>
                     </div>
                 </div>
 

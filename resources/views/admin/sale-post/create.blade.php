@@ -116,8 +116,8 @@
                         {{-- Mô tả --}}
                         <div class="mb-0">
                             <label class="form-label fw-bold small text-uppercase text-muted">Mô tả nội dung <span class="text-danger">*</span></label>
-                            <textarea name="description" class="form-control @error('description') is-invalid @enderror" 
-                                      rows="12" placeholder="Cung cấp thông tin chi tiết về căn nhà..." 
+                            <textarea name="description" id="description" class="form-control @error('description') is-invalid @enderror" 
+                                      placeholder="Cung cấp thông tin chi tiết về căn nhà..." 
                                       required style="border-radius: 10px; border: 2px solid #edf2f7;">{{ old('description') }}</textarea>
                         </div>
                     </div>
@@ -210,12 +210,4 @@
     .form-control:focus { border-color: #4f46e5 !important; box-shadow: none; }
     .btn-light:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1) !important; }
 </style>
-
-<script>
-    document.getElementById('createPostForm').addEventListener('submit', function(e) {
-        const btn = this.querySelector('button[type="submit"]');
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>ĐANG XỬ LÝ...';
-    });
-</script>
 @endsection

@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
 
     <style>
         :root {
@@ -20,12 +21,6 @@
             --danger: #ff4757;
         }
 
-        body { 
-            background-color: var(--light-bg); 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            color: var(--dark);
-        }
-
         /* Header Đồng Bộ Hero-style */
         .hero-banner-mini {
             background: var(--dark);
@@ -36,32 +31,6 @@
             color: white;
             margin-bottom: -40px;
         }
-
-        .nav-actions {
-            display: flex;
-            gap: 12px;
-            background: rgba(255,255,255,0.1);
-            padding: 8px;
-            border-radius: 50px;
-            backdrop-filter: blur(10px);
-        }
-
-        .btn-custom {
-            padding: 10px 20px;
-            border-radius: 50px;
-            font-weight: 600;
-            font-size: 14px;
-            transition: 0.3s;
-            border: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-        }
-
-        .btn-glass { background: rgba(255,255,255,0.2); color: white; }
-        .btn-glass:hover { background: white; color: var(--primary); }
-        .btn-primary-custom { background: var(--primary); color: white; }
 
         /* Card Tin Đăng Đồng Bộ */
         .post-card { 
@@ -251,11 +220,7 @@
     </div>
 </main>
 
-<footer class="py-5 text-center text-muted small">
-    <div class="container border-top pt-4">
-        &copy; 2026 <strong>EstateHub</strong>. Môi trường tìm kiếm nhà ở an toàn.
-    </div>
-</footer>
+@include('layouts.footer')
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

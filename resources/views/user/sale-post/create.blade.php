@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
 
     <style>
         body { background-color: #f4f7f6; font-family: 'Plus Jakarta Sans', sans-serif; color: #2d3436; }
@@ -165,7 +166,7 @@
 
                 <div class="mb-4">
                     <label class="form-label">Mô tả chi tiết <span class="text-danger">*</span></label>
-                    <textarea name="description" class="form-control" rows="6" placeholder="Mô tả ưu điểm, tiện ích xung quanh, pháp lý, hướng nhà..." required>{{ old('description') }}</textarea>
+                    <textarea name="description" id="description" class="form-control" placeholder="Mô tả ưu điểm, tiện ích xung quanh, pháp lý, hướng nhà..." required>{{ old('description') }}</textarea>
                 </div>
 
                 <div class="section-title">3. Hình ảnh thực tế</div>

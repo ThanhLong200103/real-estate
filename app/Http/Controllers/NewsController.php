@@ -33,7 +33,15 @@ class NewsController extends Controller
             ->with('images')
             ->firstOrFail();
 
+        // Lấy 5 bài viết được xem nhiều nhất (bài mới nhất, trừ bài hiện tại)
+        $popularPosts = News::where('status', true)
+            ->where('id', '!=', $id)
+            ->with('images')
+            ->latest()
+            ->take(5)
+            ->get();
+
         // Trả về view show nằm trong folder news
-        return view('news.show', compact('newsPost'));
+        return view('news.show', compact('newsPost', 'popularPosts'));
     }
 }

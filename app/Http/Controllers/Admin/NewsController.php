@@ -23,8 +23,9 @@ class NewsController extends Controller
     public function create()
     {
         return view('admin.news.create');
+    
     }
-
+    
     public function store(NewsRequest $request)
     {
         DB::transaction(function () use ($request) {
@@ -46,6 +47,8 @@ class NewsController extends Controller
             AdminAction::create([
                 'admin_id' => Auth::id(),
                 'action_type' => 'CREATE',
+                'target_type' => 'News',
+                'target_id' => $sale->id,
                 'description' => "Đã tạo tin tức mới: " . $request->title,
             ]);
         });
@@ -92,6 +95,8 @@ class NewsController extends Controller
             AdminAction::create([
                 'admin_id' => Auth::id(),
                 'action_type' => 'UPDATE',
+                'target_type' => 'News',
+                'target_id' => $new->id,
                 'description' => "Đã cập nhật tin tức ID #$new->id: " . $request->title,
             ]);
         });

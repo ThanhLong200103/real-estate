@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
@@ -147,6 +148,23 @@
             content: ''; width: 14px; height: 14px; margin: 8px 0 0 8px;
             background: #fff; position: absolute; border-radius: 50%;
         }
+
+        /* Status badge styles */
+        .status-badge-approved {
+            background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        .status-badge-pending {
+            background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
+            color: white;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
     </style>
 </head>
 <body>
@@ -212,9 +230,21 @@
 
             <div class="detail-card">
                 <div class="mb-4">
-                    <div class="d-flex align-items-center gap-2 mb-2">
+                    <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
                         <span class="badge bg-primary rounded-pill px-3 py-1 text-uppercase fw-800" style="font-size: 10px;">{{ $salePost->type == 'sale' ? 'Cần bán' : 'Cho thuê' }}</span>
                         <span class="text-muted small"><i class="far fa-clock me-1"></i> Đăng ngày {{ $salePost->created_at->format('d/m/Y') }}</span>
+                        
+                        @if(auth()->check() && (int)auth()->id() === (int)$salePost->user_id)
+                            @if($salePost->status)
+                                <span class="badge bg-success rounded-pill px-3 py-1 fw-800" style="font-size: 10px;">
+                                    <i class="fas fa-check-circle me-1"></i> Đã được duyệt
+                                </span>
+                            @else
+                                <span class="badge bg-warning text-dark rounded-pill px-3 py-1 fw-800" style="font-size: 10px;">
+                                    <i class="fas fa-clock me-1"></i> Đang chờ duyệt
+                                </span>
+                            @endif
+                        @endif
                     </div>
                     
                     <h1 class="fw-800 h2 mb-3">{{ $salePost->title }}</h1>
@@ -336,7 +366,21 @@
                         {{ substr($salePost->user->name ?? 'U', 0, 1) }}
                     </div>
                     <h5 class="fw-800 mb-1">{{ $salePost->user->name ?? 'Ẩn danh' }}</h5>
-                    <p class="text-muted small mb-4">Người đăng tin chuyên nghiệp</p>
+                    <p class="text-muted small mb-3">Người đăng tin chuyên nghiệp</p>
+
+                    @if(auth()->check() && (int)auth()->id() === (int)$salePost->user_id)
+                        <div class="mb-3">
+                            @if($salePost->status)
+                                <div class="alert alert-success rounded-4 py-2 small fw-bold mb-0">
+                                    <i class="fas fa-check-circle me-2"></i> Bài đăng đã được duyệt và đang hiển thị công khai
+                                </div>
+                            @else
+                                <div class="alert alert-warning rounded-4 py-2 small fw-bold mb-0">
+                                    <i class="fas fa-clock me-2"></i> Bài đăng đang chờ admin phê duyệt
+                                </div>
+                            @endif
+                        </div>
+                    @endif
 
                     <div class="d-grid gap-3">
                         @auth

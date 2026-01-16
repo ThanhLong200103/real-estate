@@ -132,6 +132,6 @@
         event.renderOptions.history = true;
     });
 </script>
-
+@stack('scripts')
 </body>
 </html>

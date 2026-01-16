@@ -1,164 +1,398 @@
+@extends('layouts.app')
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+@section('title', 'Tin Tức & Thị Trường - EstateHub')
+
+@section('content')
+@php
+    $convertImage = function($path) {
+        if (!$path) return 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80';
+        if (filter_var($path, FILTER_VALIDATE_URL)) return $path;
+        return asset('storage/' . $path);
+    };
+    
+    $getFirstImage = function($post) {
+        if ($post->images && $post->images->isNotEmpty()) {
+            $img = $post->images->first();
+            return $img->image_url ?? $img->image_path ?? null;
+        }
+        return null;
+    };
+@endphp
 
 <style>
-    /* CSS Riêng cho trang News - Đồng bộ style với Home */
-    body { background-color: #f4f7f6; font-family: 'Inter', sans-serif; }
-    .news-container { max-width: 1200px; margin: 0 auto; padding: 50px 15px; }
-
-    /* Header */
-    .page-header {
-        display: flex; justify-content: space-between; align-items: flex-end;
-        margin-bottom: 40px; border-bottom: 2px solid #e9ecef; padding-bottom: 20px;
+    .news-hero-section {
+        padding: 60px 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        margin-bottom: 50px;
     }
-    .page-title h2 { font-weight: 800; color: #2d3436; margin: 0; text-transform: uppercase; letter-spacing: 0.5px; }
-    .page-title p { margin: 5px 0 0; color: #636e72; font-weight: 500; }
 
-    .btn-back {
-        text-decoration: none; color: #636e72; font-weight: 600;
-        border: 1px solid #dfe6e9; padding: 8px 16px; border-radius: 8px;
-        transition: 0.3s; background: #fff;
+    .news-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 15px 50px;
     }
-    .btn-back:hover { border-color: #6c5ce7; color: #6c5ce7; }
 
-    /* Grid System (Thay thế row/col của Bootstrap để đều hơn) */
+    /* Layout 2 cột */
+    .news-layout {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 30px;
+        margin-bottom: 50px;
+    }
+
+    /* Bài viết nổi bật bên trái */
+    .featured-article {
+        position: relative;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        transition: transform 0.3s ease;
+        cursor: pointer;
+        height: 100%;
+        min-height: 500px;
+    }
+
+    .featured-article:hover {
+        transform: translateY(-5px);
+    }
+
+    .featured-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: 1;
+    }
+
+    .featured-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 50%, transparent 100%);
+        padding: 40px;
+        z-index: 2;
+        color: white;
+    }
+
+    .featured-tag {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 15px;
+    }
+
+    .featured-title {
+        font-size: 32px;
+        font-weight: 800;
+        line-height: 1.3;
+        margin-bottom: 15px;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+
+    .featured-byline {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        opacity: 0.9;
+    }
+
+    .featured-byline .author {
+        font-weight: 700;
+    }
+
+    .featured-byline .date {
+        opacity: 0.8;
+    }
+
+    /* Cột phải - 3 bài viết nhỏ */
+    .sidebar-articles {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .sidebar-article {
+        display: flex;
+        gap: 15px;
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .sidebar-article:hover {
+        transform: translateX(5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .sidebar-image {
+        width: 140px;
+        min-width: 140px;
+        height: 140px;
+        object-fit: cover;
+        background: #f1f2f6;
+    }
+
+    .sidebar-content {
+        padding: 20px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .sidebar-tag {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 4px 10px;
+        border-radius: 12px;
+        margin-bottom: 10px;
+    }
+
+    .sidebar-title {
+        font-size: 16px;
+        font-weight: 700;
+        line-height: 1.4;
+        color: #2d3436;
+        margin: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* Tag colors */
+    .tag-business { background: #3b82f6; color: white; }
+    .tag-culture { background: #8b5cf6; color: white; }
+    .tag-lifestyle { background: #ec4899; color: white; }
+    .tag-sport { background: #10b981; color: white; }
+    .tag-default { background: #6c5ce7; color: white; }
+
+    /* Grid các bài viết còn lại */
     .news-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 30px;
+        gap: 25px;
+        margin-top: 50px;
     }
 
-    /* Card Tin tức */
     .news-card {
-        background: #fff; border-radius: 16px; overflow: hidden;
-        border: 1px solid #eee; display: flex; flex-direction: column;
-        transition: all 0.3s ease; height: 100%;
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
     }
+
     .news-card:hover {
         transform: translateY(-8px);
-        box-shadow: 0 15px 30px rgba(0,0,0,0.1);
-        border-color: #a29bfe;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
     }
 
-    /* Ảnh thumbnail */
-    .news-thumb {
-        height: 220px; width: 100%; position: relative; overflow: hidden;
-        background: #f1f2f6; display: flex; align-items: center; justify-content: center;
-    }
-    .news-thumb img {
-        width: 100%; height: 100%; object-fit: cover;
-        transition: transform 0.5s ease;
-    }
-    .news-card:hover .news-thumb img { transform: scale(1.05); }
-    
-    .date-badge {
-        position: absolute; top: 15px; left: 15px;
-        background: rgba(255, 255, 255, 0.95); padding: 5px 12px;
-        border-radius: 6px; color: #2d3436; font-size: 12px; font-weight: 700;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: flex; align-items: center;
-    }
-    .date-badge i { color: #6c5ce7; margin-right: 5px; }
-
-    /* Nội dung Card */
-    .news-body { padding: 25px; flex-grow: 1; display: flex; flex-direction: column; }
-    
-    .news-title {
-        font-size: 18px; font-weight: 700; color: #2d3436;
-        margin-bottom: 15px; line-height: 1.4;
-        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-    }
-    
-    .news-excerpt {
-        font-size: 14px; color: #636e72; line-height: 1.6; margin-bottom: 20px;
-        display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    .news-card-image {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        background: #f1f2f6;
     }
 
-    /* Nút Đọc thêm */
-    .btn-read-more {
-        margin-top: auto; /* Đẩy nút xuống đáy */
-        display: inline-flex; align-items: center; justify-content: center;
-        width: 100%; padding: 10px; border-radius: 8px;
-        background: #f8f9fa; color: #2d3436; font-weight: 600;
-        text-decoration: none; transition: 0.3s;
-    }
-    .btn-read-more:hover {
-        background: #6c5ce7; color: white;
+    .news-card-body {
+        padding: 20px;
+        flex: 1;
     }
 
-    /* Trạng thái trống */
+    .news-card-tag {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        padding: 4px 10px;
+        border-radius: 12px;
+        margin-bottom: 12px;
+    }
+
+    .news-card-title {
+        font-size: 16px;
+        font-weight: 700;
+        line-height: 1.4;
+        color: #2d3436;
+        margin: 0 0 10px 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .news-card-date {
+        font-size: 12px;
+        color: #636e72;
+        font-weight: 600;
+    }
+
     .empty-state {
-        grid-column: 1 / -1; text-align: center; padding: 60px;
-        background: #fff; border-radius: 16px; border: 2px dashed #b2bec3;
+        text-align: center;
+        padding: 80px 20px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
     }
 
-    /* Pagination Styling */
-    .pagination-wrapper { margin-top: 40px; display: flex; justify-content: center; }
-    /* CSS Override cho Laravel Pagination mặc định để đẹp hơn */
-    .pagination { gap: 5px; }
-    .page-item .page-link {
-        border-radius: 8px; border: none; color: #2d3436;
-        padding: 10px 16px; font-weight: 600;
+    .pagination-wrapper {
+        margin-top: 50px;
+        display: flex;
+        justify-content: center;
     }
+
+    .pagination {
+        gap: 8px;
+    }
+
+    .page-item .page-link {
+        border-radius: 10px;
+        border: none;
+        color: #2d3436;
+        padding: 10px 16px;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
     .page-item.active .page-link {
-        background-color: #6c5ce7; color: white;
+        background-color: #6c5ce7;
+        color: white;
     }
 
     /* Responsive */
-    @media (max-width: 992px) { .news-grid { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 600px) { 
-        .news-grid { grid-template-columns: 1fr; } 
-        .page-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+    @media (max-width: 992px) {
+        .news-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .news-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .featured-article {
+            min-height: 400px;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .news-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .sidebar-article {
+            flex-direction: column;
+        }
+
+        .sidebar-image {
+            width: 100%;
+            height: 200px;
+        }
     }
 </style>
 
-<div class="news-container">
-    <div class="page-header">
-        <div class="page-title">
-            <h2>Tin Tức & Thị Trường</h2>
-            <p>Cập nhật xu hướng bất động sản mới nhất</p>
-        </div>
-        <a href="{{ url('/home') }}" class="btn-back">
-            <i class="fas fa-arrow-left me-1"></i> Quay lại Trang chủ
-        </a>
-    </div>
-
-    <div class="news-grid">
-        @forelse($newsList as $post)
-        <div class="news-card">
-            <div class="news-thumb">
-                <div class="date-badge">
-                    <i class="far fa-calendar-alt"></i> {{ $post->created_at->format('d/m/Y') }}
-                </div>
-                
-                @if($post->images->isNotEmpty())
-                    <img src="{{ asset('storage/' . $post->images->first()->path) }}" alt="{{ $post->title }}">
-                @else
-                    <img src="https://via.placeholder.com/400x250?text=No+Image" alt="Default">
-                @endif
-            </div>
-
-            <div class="news-body">
-                <h3 class="news-title">{{ $post->title }}</h3>
-                <p class="news-excerpt">
-                    {{ Str::limit(strip_tags($post->content), 120) }}
-                </p>
-                
-                <a href="{{ route('news.show', $post->id) }}" class="btn-read-more">
-                    Đọc chi tiết <i class="fas fa-long-arrow-alt-right ms-2"></i>
-                </a>
-            </div>
-        </div>
-        @empty
-        <div class="empty-state">
-            <i class="far fa-newspaper fa-3x text-muted mb-3"></i>
-            <p class="text-muted fw-bold">Hiện chưa có tin tức nào được đăng tải.</p>
-        </div>
-        @endforelse
-    </div>
-
-    <div class="pagination-wrapper">
-        {{ $newsList->links() }} 
-        {{-- Lưu ý: Nếu giao diện phân trang bị vỡ, hãy thêm 'pagination::bootstrap-5' vào trong links() --}}
+<div class="news-hero-section">
+    <div class="container text-center">
+        <h1 class="display-4 fw-800 mb-3">Tin Tức & Thị Trường</h1>
+        <p class="lead opacity-90">Cập nhật xu hướng bất động sản mới nhất</p>
     </div>
 </div>
+
+<div class="news-container">
+    @if($newsList->count() > 0)
+        @php
+            $featuredPost = $newsList->first();
+            $sidebarPosts = $newsList->skip(1)->take(3);
+            $remainingPosts = $newsList->skip(4);
+        @endphp
+
+        <div class="news-layout">
+            {{-- Bài viết nổi bật bên trái --}}
+            <a href="{{ route('news.show', $featuredPost->id) }}" class="featured-article">
+                <img src="{{ $convertImage($getFirstImage($featuredPost)) }}" alt="{{ $featuredPost->title }}" class="featured-image">
+                <div class="featured-overlay">
+                    <span class="featured-tag tag-default">Tin tức</span>
+                    <h2 class="featured-title">{{ $featuredPost->title }}</h2>
+                    <div class="featured-byline">
+                        <span class="author">Admin</span>
+                        <span class="date">- {{ $featuredPost->created_at->format('M d') }}</span>
+    </div>
+                </div>
+            </a>
+
+            {{-- 3 bài viết nhỏ bên phải --}}
+            <div class="sidebar-articles">
+                @foreach($sidebarPosts as $index => $post)
+                    @php
+                        $tags = ['tag-business', 'tag-culture', 'tag-lifestyle', 'tag-sport'];
+                        $tagClass = $tags[$index % count($tags)] ?? 'tag-default';
+                    @endphp
+                    <a href="{{ route('news.show', $post->id) }}" class="sidebar-article">
+                        <img src="{{ $convertImage($getFirstImage($post)) }}" alt="{{ $post->title }}" class="sidebar-image">
+                        <div class="sidebar-content">
+                            <div>
+                                <span class="sidebar-tag {{ $tagClass }}">Tin tức</span>
+                                <h3 class="sidebar-title">{{ $post->title }}</h3>
+                            </div>
+            </div>
+                    </a>
+                @endforeach
+            </div>
+        </div>
+
+        {{-- Grid các bài viết còn lại --}}
+        @if($remainingPosts->count() > 0)
+            <div class="news-grid">
+                @foreach($remainingPosts as $index => $post)
+                    @php
+                        $tags = ['tag-business', 'tag-culture', 'tag-lifestyle', 'tag-sport'];
+                        $tagClass = $tags[$index % count($tags)] ?? 'tag-default';
+                    @endphp
+                    <a href="{{ route('news.show', $post->id) }}" class="news-card">
+                        <img src="{{ $convertImage($getFirstImage($post)) }}" alt="{{ $post->title }}" class="news-card-image">
+                        <div class="news-card-body">
+                            <span class="news-card-tag {{ $tagClass }}">Tin tức</span>
+                            <h3 class="news-card-title">{{ $post->title }}</h3>
+                            <div class="news-card-date">{{ $post->created_at->format('d/m/Y') }}</div>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+        @endif
+    @else
+        <div class="empty-state">
+            <i class="far fa-newspaper fa-4x text-muted mb-4"></i>
+            <h3 class="fw-800 text-muted">Chưa có tin tức nào</h3>
+            <p class="text-muted">Hãy quay lại sau để xem các tin tức mới nhất.</p>
+        </div>
+    @endif
+
+    <div class="pagination-wrapper">
+        {{ $newsList->links('pagination::bootstrap-5') }}
+    </div>
+</div>
+@endsection
