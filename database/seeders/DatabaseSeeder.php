@@ -24,9 +24,10 @@ class DatabaseSeeder extends Seeder
         //     'name' => 'Test User',
         //     'email' => 'test@example.com',
         // ]);
-        $this->call(UserSeeder::class);
-        $this->call(TestSeeder::class);
         $this->call([
+            UserSeeder::class,     // 1. Tạo người dùng trước
+            CategorySeeder::class, // 2. Tạo danh mục để bài đăng có cái mà trỏ vào
+            TestSeeder::class,     // 3. Tạo dữ liệu test
             SalePostSeeder::class,
         ]);
         $this->call(NewsSeederfinal::class);

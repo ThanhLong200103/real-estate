@@ -22,7 +22,7 @@ return new class extends Migration
                 ->nullable() // Cho phép null nếu chưa xác định danh mục
                 ->constrained('categories')
                 ->onDelete('set null'); // Nếu xóa danh mục, tin đăng vẫn giữ lại nhưng category_id = null
-
+            $table->string('type'); // Thêm luôn vào đây
             $table->string('title', 200);
             $table->text('description');
             $table->decimal('price', 15, 2);

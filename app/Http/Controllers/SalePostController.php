@@ -135,6 +135,7 @@ class SalePostController extends Controller
     {
         $salePost = SalePost::with(['images', 'user', 'category', 'comments.user'])->findOrFail($id);
 
+        
         if (!$salePost->status) {
             $isAdmin = Auth::check() && strcasecmp(Auth::user()->role, 'admin') === 0;
             $isOwner = Auth::check() && $salePost->user_id == Auth::id();
