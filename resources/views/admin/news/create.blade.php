@@ -61,7 +61,7 @@
                     <div class="card-body">
                         <label for="image_url" class="form-label fw-bold">Hình ảnh đính kèm</label>
                         <div class="input-group">
-                            <input type="file" name="image_url[]" id="image_url" class="form-control border-2" 
+                            <input type="file" name="image_array_new[]" id="image_url" class="form-control border-2" 
                                    multiple accept=".jpg,.jpeg,.png,.webp">
                         </div>
                         <div class="mt-2 small text-muted">

@@ -120,6 +120,8 @@ class NewsController extends Controller
                 'admin_id' => Auth::id(),
                 'action_type' => 'DELETE',
                 'description' => "Đã xóa tin tức: " . $title,
+                'target_type' => 'News',
+                'target_id' => $news->id,
             ]);
         });
 
