@@ -99,8 +99,8 @@ class SalePostController extends Controller
                     'address'      => $request->address,
                     'bedrooms'     => (int)($request->bedrooms ?? 0),
                     'bathrooms'    => (int)($request->bathrooms ?? 0),
-                    'is_furnished' => $request->has('is_furnished') ? 1 : 0,
-                    'status'       => $request->has('status') ? 1 : 0,
+                    'is_furnished' =>$request->boolean('is_furnished'),
+                    'status'       =>$request->boolean('status'), // Mặc định chờ duyệt
                 ]);
 
                 if ($request->hasFile('images')) {
@@ -170,22 +170,24 @@ class SalePostController extends Controller
                         'area'         => $request->area,
                         'bedrooms'     => (int)($request->bedrooms ?? 0),
                         'bathrooms'    => (int)($request->bathrooms ?? 0),
-                        'is_furnished' => (bool)$request->is_furnished,
+                        'is_furnished' => $request->boolean('is_furnished'),
                     ]);
 
-                    if ($request->hasFile('image_url')) {
+                    if ($request->hasFile('images')) {
                         foreach ($rentPost->images as $oldImage) {
                             Storage::disk('public')->delete($oldImage->image_url);
                             $oldImage->delete();
                         }
-                        foreach ($request->file('image_url') as $image) {
+
+                        foreach ($request->file('images') as $image) {
                             $path = $image->store('posts', 'public');
                             $rentPost->images()->create(['image_url' => $path]);
                         }
                     }
 
-                    if ($request->has('status') && strcasecmp(Auth::user()->role, 'admin') === 0) {
-                        $rentPost->update(['status' => (bool)$request->status]);
+
+                    if (strcasecmp(Auth::user()->role, 'admin') === 0) {
+                        $rentPost->update(['status' => $request->boolean('status')]);
                     }
 
                     AdminAction::create([

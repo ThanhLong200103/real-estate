@@ -140,9 +140,7 @@
                                 <div class="d-flex justify-content-center gap-2">
                                     <form action="{{ route('approve-sale-post-admin', $post->id) }}" method="POST">
                                         @csrf @method('PATCH')
-                                        <button type="submit" class="btn btn-sm btn-approve px-3 shadow-sm" style="border-radius: 8px; height: 32px;" onclick="return confirm('Phê duyệt tin đăng này lên trang chủ?')">
-                                            <i class="fas fa-check me-1"></i> DUYỆT
-                                        </button>
+                                        
                                     </form>
                                     
                                     <div class="btn-group border rounded-3 overflow-hidden">

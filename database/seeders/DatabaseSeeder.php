@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class, // 2. Tạo danh mục để bài đăng có cái mà trỏ vào
             TestSeeder::class,     // 3. Tạo dữ liệu test
             SalePostSeeder::class,
+            NewsSeederfinal::class,
         ]);
         $this->call(NewsSeederfinal::class);
         $this->call(NewsSeeder::class);

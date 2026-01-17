@@ -4,28 +4,35 @@
 @php
     // Tự động bắt biến từ Controller bất kể tên gì
     $item = $post ?? $salePost ?? $rentPost ?? $item ?? null;
-    
-    // Logic xác định route quay lại (Fix lỗi Route [index-sale-post-admin] not defined)
-    // Nếu bài đã duyệt thì quay về index_true, nếu chưa thì về index_false
-    $backRoute = ($item && $item->status) 
-                ? route('index-true-sale-post-admin') 
-                : route('index-false-sale-post-admin');
+
+    // Xác định type để quay lại đúng tab sale/rent
+    $type = $item?->type ?? request('type', 'sale');
+
+    // Quay lại đúng trang (true/false) + giữ type
+    $backRoute = ($item && $item->status)
+        ? route('index-true-sale-post-admin', ['type' => $type])
+        : route('index-false-sale-post-admin', ['type' => $type]);
 @endphp
 
 @if(!$item)
-    <div class="container-fluid py-5 text-center" up-target=".main-content">
+    <div class="container-fluid py-5 text-center">
         <div class="display-1 text-muted opacity-25 mb-4"><i class="fas fa-search"></i></div>
         <h4 class="fw-bold">Không tìm thấy dữ liệu bài đăng</h4>
-        <a href="{{ route('index-false-sale-post-admin') }}" class="btn btn-primary rounded-pill px-4" up-follow>Quay lại danh sách</a>
+        <a href="{{ route('index-false-sale-post-admin', ['type' => $type]) }}"
+           class="btn btn-primary rounded-pill px-4"
+           up-follow>
+            Quay lại danh sách
+        </a>
     </div>
 @else
+
 <style>
     .detail-card { border: none; border-radius: 24px; overflow: hidden; background: white; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
     .table-detail th { background-color: #f8fafc; color: #64748b; font-weight: 600; width: 35%; border-left: 4px solid #4f46e5; padding: 15px 20px; }
     .table-detail td { font-weight: 500; color: #1e293b; padding: 15px 20px; }
     .price-large { font-size: 2.2rem; font-weight: 800; color: #4f46e5; letter-spacing: -1px; }
     .description-box { background-color: #f8fafc; border-radius: 20px; padding: 30px; line-height: 1.8; color: #334155; border: 1px solid #e2e8f0; min-height: 150px; white-space: pre-line; }
-    
+
     .img-main-container { border-radius: 20px; overflow: hidden; border: 1px solid #e2e8f0; height: 450px; background: #f1f5f9; position: relative; }
     .img-full { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
     .img-grid-item { border-radius: 12px; overflow: hidden; height: 100px; border: 2px solid transparent; cursor: pointer; transition: 0.3s; background: #f8fafc; }
@@ -34,7 +41,7 @@
 
     .badge-status { padding: 10px 20px; border-radius: 50px; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
     .section-title { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #4f46e5; letter-spacing: 1.5px; margin-bottom: 20px; display: block; }
-    
+
     .type-label { position: absolute; top: 20px; left: 20px; z-index: 10; padding: 8px 16px; border-radius: 12px; font-weight: 800; color: white; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
     .bg-primary-soft { background-color: #e0e7ff; color: #4338ca; }
 </style>
@@ -44,13 +51,15 @@
         <div>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-1">
-                    {{-- Sửa lỗi: Quay lại trang danh sách phù hợp --}}
-                    <li class="breadcrumb-item"><a href="{{ $backRoute }}" class="text-muted text-decoration-none" up-follow>Quản lý</a></li>
+                    <li class="breadcrumb-item">
+                        <a href="{{ $backRoute }}" class="text-muted text-decoration-none" up-follow>Quản lý</a>
+                    </li>
                     <li class="breadcrumb-item active text-primary fw-bold">Chi tiết bài đăng #{{ $item->id }}</li>
                 </ol>
             </nav>
             <h2 class="fw-800 text-dark m-0">Kiểm duyệt nội dung</h2>
         </div>
+
         <div class="d-flex gap-2">
             @if($item->status)
                 <span class="badge bg-success text-white badge-status shadow-sm">
@@ -70,7 +79,7 @@
                 <div class="col-lg-7">
                     <span class="section-title">Thông số kỹ thuật</span>
                     <h3 class="fw-800 text-dark mb-4" style="line-height: 1.3;">{{ $item->title }}</h3>
-                    
+
                     <div class="table-responsive rounded-4 border overflow-hidden mb-5">
                         <table class="table table-detail align-middle mb-0">
                             <tr>
@@ -82,34 +91,30 @@
                                     </span>
                                 </td>
                             </tr>
+
                             <tr>
-                                <th><i class="fas fa-tags me-2"></i> Loại hình</th>
+                                <th><i class="fas fa-tags me-2"></i> Danh mục</th>
                                 <td>
-                                    {{-- Kiểm tra nếu category là Object (từ quan hệ) hay String --}}
                                     @php
-                                        $catSlug = is_object($item->category) ? $item->category->slug : $item->category;
-                                        $catName = is_object($item->category) ? $item->category->name : $item->category;
-                                        
-                                        $categoryClass = match($catSlug) {
-                                            'apartment' => 'bg-primary',
-                                            'house'     => 'bg-info text-dark',
-                                            'land'      => 'bg-success',
-                                            default     => 'bg-secondary',
-                                        };
+                                        // DB của bạn là category_id -> quan hệ category là object
+                                        $catName = $item->category?->name ?? 'Chưa phân loại';
                                     @endphp
-                                    <span class="badge {{ $categoryClass }} px-3 py-2 rounded-pill fw-bold">
+                                    <span class="badge bg-secondary px-3 py-2 rounded-pill fw-bold">
                                         {{ $catName }}
                                     </span>
                                 </td>
                             </tr>
+
                             <tr>
                                 <th><i class="fas fa-ruler-combined me-2"></i> Diện tích</th>
-                                <td><span class="fs-5 fw-bold">{{ $item->area }} m²</span> 
+                                <td>
+                                    <span class="fs-5 fw-bold">{{ $item->area }} m²</span>
                                     @if($item->area > 0)
                                         <small class="text-muted">(Giá: {{ number_format($item->price / $item->area) }} đ/m²)</small>
                                     @endif
                                 </td>
                             </tr>
+
                             <tr>
                                 <th><i class="fas fa-door-open me-2"></i> Bố cục</th>
                                 <td>
@@ -117,16 +122,20 @@
                                     <span class="fw-bold"><i class="fas fa-bath text-info me-1"></i> {{ $item->bathrooms ?? 0 }} PT</span>
                                 </td>
                             </tr>
+
                             <tr>
                                 <th><i class="fas fa-couch me-2"></i> Nội thất</th>
                                 <td>
                                     @if($item->is_furnished)
-                                        <span class="badge bg-primary-soft text-primary px-3 py-2 rounded-pill border border-primary border-opacity-25">Đầy đủ nội thất</span>
+                                        <span class="badge bg-primary-soft text-primary px-3 py-2 rounded-pill border border-primary border-opacity-25">
+                                            Đầy đủ nội thất
+                                        </span>
                                     @else
                                         <span class="text-muted"><i class="fas fa-times-circle me-1"></i> Cơ bản / Trống</span>
                                     @endif
                                 </td>
                             </tr>
+
                             <tr>
                                 <th><i class="fas fa-map-marker-alt me-2"></i> Địa chỉ</th>
                                 <td class="text-dark fw-bold">{{ $item->address }}</td>
@@ -142,28 +151,40 @@
 
                 <div class="col-lg-5">
                     <span class="section-title">Thư viện ảnh ({{ $item->images->count() }})</span>
-                    
+
                     @if($item->images->isNotEmpty())
                         <div class="img-main-container mb-3 shadow-sm">
                             <div class="type-label">{{ $item->type == 'sale' ? 'BÁN' : 'CHO THUÊ' }}</div>
-                            @php 
+
+                            @php
                                 $first = $item->images->first()->image_url;
-                                $firstSrc = str_starts_with($first, 'http') ? $first : asset('storage/' . ltrim($first, '/'));
+                                $firstSrc = str_starts_with($first, 'http')
+                                    ? $first
+                                    : asset('storage/' . ltrim($first, '/'));
                             @endphp
+
                             <img src="{{ $firstSrc }}" class="img-full" id="mainImage">
                         </div>
 
                         <div class="row g-2">
                             @foreach($item->images as $index => $img)
+                                @php
+                                    $src = str_starts_with($img->image_url, 'http')
+                                        ? $img->image_url
+                                        : asset('storage/' . ltrim($img->image_url, '/'));
+                                @endphp
+
                                 <div class="col-3">
-                                    <div class="img-grid-item shadow-sm {{ $index == 0 ? 'active' : '' }}" onclick="changeImage(this, '{{ str_starts_with($img->image_url, 'http') ? $img->image_url : asset('storage/' . ltrim($img->image_url, '/')) }}')">
-                                        <img src="{{ str_starts_with($img->image_url, 'http') ? $img->image_url : asset('storage/' . ltrim($img->image_url, '/')) }}" class="img-full">
+                                    <div class="img-grid-item shadow-sm {{ $index == 0 ? 'active' : '' }}"
+                                         onclick="changeImage(this, '{{ $src }}')">
+                                        <img src="{{ $src }}" class="img-full">
                                     </div>
                                 </div>
                             @endforeach
                         </div>
                     @else
-                        <div class="text-center py-5 bg-light rounded-4 border-dashed-custom" style="min-height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px dashed #cbd5e1;">
+                        <div class="text-center py-5 bg-light rounded-4 border-dashed-custom"
+                             style="min-height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px dashed #cbd5e1;">
                             <i class="fas fa-image fa-3x text-muted opacity-25 mb-3"></i>
                             <h5 class="text-dark fw-bold">Không có hình ảnh</h5>
                         </div>
@@ -190,27 +211,38 @@
 
         <div class="card-footer p-4 bg-white border-top">
             <div class="d-flex justify-content-between align-items-center">
-                {{-- Sửa lỗi: Route quay lại chuẩn --}}
                 <a href="{{ $backRoute }}" class="btn btn-light px-4 fw-bold" up-follow>
                     <i class="fas fa-arrow-left me-2"></i> Quay lại
                 </a>
-                
+
                 <div class="d-flex gap-3">
-                    <form action="{{ route('destroy-sale-post-admin', $item->id) }}" method="POST" onsubmit="return confirm('Xóa bài đăng này vĩnh viễn?')" up-submit up-target=".main-content, #admin-sidebar-nav">
-                        @csrf @method('DELETE')
+                    {{-- QUAN TRỌNG: Tắt Unpoly với form submit để redirect/session hoạt động chuẩn --}}
+                    <form action="{{ route('destroy-sale-post-admin', $item->id) }}"
+                          method="POST"
+                          onsubmit="return confirm('Xóa bài đăng này vĩnh viễn?')"
+                          up-disable>
+                        @csrf
+                        @method('DELETE')
                         <button type="submit" class="btn btn-outline-danger border-0 fw-bold">
                             <i class="fas fa-trash-alt me-2"></i> Gỡ bỏ tin
                         </button>
                     </form>
 
-                    <a href="{{ route('edit-sale-post-admin', $item->id) }}" class="btn btn-outline-warning fw-bold px-4" up-follow>
+                    <a href="{{ route('edit-sale-post-admin', $item->id) }}"
+                       class="btn btn-outline-warning fw-bold px-4"
+                       up-follow>
                         <i class="fas fa-edit me-2"></i> Chỉnh sửa
                     </a>
-                    
+
                     @if(!$item->status)
-                        <form action="{{ route('approve-sale-post-admin', $item->id) }}" method="POST" up-submit up-target=".main-content, #admin-sidebar-nav">
-                            @csrf @method('PATCH')
-                            <button type="submit" class="btn btn-success fw-bold px-5 shadow-sm" style="background: #10b981; border: none;">
+                        <form action="{{ route('approve-sale-post-admin', $item->id) }}"
+                              method="POST"
+                              up-disable>
+                            @csrf
+                            @method('PATCH')
+                            <button type="submit"
+                                    class="btn btn-success fw-bold px-5 shadow-sm"
+                                    style="background: #10b981; border: none;">
                                 <i class="fas fa-check-double me-2"></i> PHÊ DUYỆT NGAY
                             </button>
                         </form>
@@ -225,6 +257,7 @@
     function changeImage(element, src) {
         const mainImg = document.getElementById('mainImage');
         if(!mainImg) return;
+
         mainImg.style.opacity = '0.5';
         setTimeout(() => {
             mainImg.src = src;
