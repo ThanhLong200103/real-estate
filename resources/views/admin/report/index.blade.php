@@ -37,6 +37,23 @@
         color: var(--admin-primary);
         margin-right: 10px;
     }
+
+    /* ✅ Modal box style đồng bộ */
+    .confirm-box {
+        border-radius: 14px;
+        padding: 14px 16px;
+        border: 1px solid rgba(0,0,0,0.05);
+        background: #f8fafc;
+    }
+    .confirm-box.danger {
+        background: #fff5f5;
+        border-color: #ffe0e0;
+    }
+    .confirm-title {
+        font-weight: 800;
+        margin: 0 0 6px;
+        letter-spacing: -0.2px;
+    }
 </style>
 
 <div class="container-fluid py-4">
@@ -94,6 +111,7 @@
                                     </div>
                                 </div>
                             </td>
+
                             <td>
                                 @if($report->salePost)
                                     <div class="fw-bold text-dark mb-1">{{ Str::limit($report->salePost->title, 35) }}</div>
@@ -104,10 +122,12 @@
                                     <span class="badge bg-light text-danger status-badge">Bài viết đã bị gỡ</span>
                                 @endif
                             </td>
+
                             <td>
                                 <div class="badge bg-danger bg-opacity-10 text-danger mb-1" style="font-size: 0.7rem;">{{ $report->reason }}</div>
                                 <div class="text-muted small text-truncate" style="max-width: 200px;">{{ $report->content ?? 'Không có mô tả thêm' }}</div>
                             </td>
+
                             <td>
                                 @if($report->status == 0)
                                     <span class="status-badge bg-warning bg-opacity-10 text-warning">
@@ -123,23 +143,41 @@
                                     </span>
                                 @endif
                             </td>
+
                             <td class="text-end pe-4">
                                 @if($report->status == 0)
                                     <div class="d-flex justify-content-end gap-2">
-                                        <form action="{{ route('update-report-admin', $report->id) }}" method="POST">
+
+                                        {{-- ✅ FORM DUYỆT (ACCEPT) - mở modal xác nhận --}}
+                                        <form action="{{ route('update-report-admin', $report->id) }}" method="POST" class="m-0 report-form-accept">
                                             @csrf @method('PATCH')
                                             <input type="hidden" name="action" value="accept">
-                                            <button type="submit" class="btn btn-sm btn-success btn-action" onclick="return confirm('Bạn chắc chắn muốn gỡ bài viết này?')">
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-success btn-action btn-open-accept-modal"
+                                                data-report-id="{{ $report->id }}"
+                                                data-reason="{{ e($report->reason) }}"
+                                                data-title="{{ e(optional($report->salePost)->title ?? 'Bài viết đã bị gỡ') }}"
+                                            >
                                                 Duyệt lỗi
                                             </button>
                                         </form>
-                                        <form action="{{ route('update-report-admin', $report->id) }}" method="POST">
+
+                                        {{-- ✅ FORM BỎ QUA (REJECT) - mở modal xác nhận --}}
+                                        <form action="{{ route('update-report-admin', $report->id) }}" method="POST" class="m-0 report-form-reject">
                                             @csrf @method('PATCH')
                                             <input type="hidden" name="action" value="reject">
-                                            <button type="submit" class="btn btn-sm btn-outline-secondary btn-action">
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-outline-secondary btn-action btn-open-reject-modal"
+                                                data-report-id="{{ $report->id }}"
+                                                data-reason="{{ e($report->reason) }}"
+                                                data-title="{{ e(optional($report->salePost)->title ?? 'Bài viết đã bị gỡ') }}"
+                                            >
                                                 Bỏ qua
                                             </button>
                                         </form>
+
                                     </div>
                                 @else
                                     <span class="text-muted small fw-italic">{{ $report->updated_at->diffForHumans() }}</span>
@@ -151,6 +189,7 @@
                 </table>
             </div>
         </div>
+
         <div class="card-footer bg-white border-0 py-4">
             <div class="d-flex justify-content-center">
                 {{ $reports->links('pagination::bootstrap-5') }}
@@ -158,4 +197,133 @@
         </div>
     </div>
 </div>
+
+<!-- ✅ MODAL: XÁC NHẬN DUYỆT LỖI (GỠ BÀI) -->
+<div class="modal fade" id="acceptReportModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 18px;">
+      <div class="modal-header border-0 px-4 pt-4">
+        <h5 class="modal-title fw-bold">
+          <i class="fas fa-check-circle me-2 text-success"></i>Xác nhận duyệt báo cáo
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body px-4">
+        <div class="confirm-box danger">
+          <p class="confirm-title text-danger">Bạn sắp gỡ bài đăng khỏi hệ thống</p>
+          <div class="small text-muted">
+            <div class="mb-2">Bài bị báo cáo: <b id="acceptPostTitle"></b></div>
+            <div>Lý do: <span class="badge bg-danger bg-opacity-10 text-danger" id="acceptReasonBadge"></span></div>
+          </div>
+        </div>
+
+        <div class="small text-muted mt-3">
+          Sau khi gỡ bài, bài đăng sẽ không còn hiển thị công khai.
+        </div>
+      </div>
+
+      <div class="modal-footer border-0 px-4 pb-4">
+        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+        <button type="button" class="btn btn-success rounded-pill px-4 fw-bold" id="acceptConfirmBtn">
+          Xác nhận duyệt
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ MODAL: XÁC NHẬN BỎ QUA (BÁC BỎ) -->
+<div class="modal fade" id="rejectReportModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 18px;">
+      <div class="modal-header border-0 px-4 pt-4">
+        <h5 class="modal-title fw-bold">
+          <i class="fas fa-times-circle me-2 text-secondary"></i>Xác nhận bỏ qua báo cáo
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body px-4">
+        <div class="confirm-box">
+          <p class="confirm-title">Bạn muốn bác bỏ báo cáo này?</p>
+          <div class="small text-muted">
+            <div class="mb-2">Bài bị báo cáo: <b id="rejectPostTitle"></b></div>
+            <div>Lý do: <span class="badge bg-danger bg-opacity-10 text-danger" id="rejectReasonBadge"></span></div>
+          </div>
+        </div>
+
+        <div class="small text-muted mt-3">
+          Báo cáo sẽ được đánh dấu “Đã bác bỏ” và không xử lý thêm.
+        </div>
+      </div>
+
+      <div class="modal-footer border-0 px-4 pb-4">
+        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+        <button type="button" class="btn btn-outline-secondary rounded-pill px-4 fw-bold" id="rejectConfirmBtn">
+          Xác nhận bỏ qua
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{-- Bootstrap bundle (thường admin.layout đã có, nhưng thêm vẫn ok; nếu bị trùng thì xoá dòng này) --}}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // ===== Accept modal =====
+    const acceptModalEl = document.getElementById('acceptReportModal');
+    const acceptTitleEl = document.getElementById('acceptPostTitle');
+    const acceptReasonEl = document.getElementById('acceptReasonBadge');
+    const acceptConfirmBtn = document.getElementById('acceptConfirmBtn');
+    let acceptTargetForm = null;
+
+    document.querySelectorAll('.btn-open-accept-modal').forEach(btn => {
+        btn.addEventListener('click', function () {
+            acceptTargetForm = this.closest('form.report-form-accept');
+
+            const title = this.dataset.title || 'Bài viết';
+            const reason = this.dataset.reason || 'Không rõ';
+
+            acceptTitleEl.textContent = title;
+            acceptReasonEl.textContent = reason;
+
+            const modal = new bootstrap.Modal(acceptModalEl);
+            modal.show();
+        });
+    });
+
+    acceptConfirmBtn.addEventListener('click', function () {
+        if (acceptTargetForm) acceptTargetForm.submit();
+    });
+
+    // ===== Reject modal =====
+    const rejectModalEl = document.getElementById('rejectReportModal');
+    const rejectTitleEl = document.getElementById('rejectPostTitle');
+    const rejectReasonEl = document.getElementById('rejectReasonBadge');
+    const rejectConfirmBtn = document.getElementById('rejectConfirmBtn');
+    let rejectTargetForm = null;
+
+    document.querySelectorAll('.btn-open-reject-modal').forEach(btn => {
+        btn.addEventListener('click', function () {
+            rejectTargetForm = this.closest('form.report-form-reject');
+
+            const title = this.dataset.title || 'Bài viết';
+            const reason = this.dataset.reason || 'Không rõ';
+
+            rejectTitleEl.textContent = title;
+            rejectReasonEl.textContent = reason;
+
+            const modal = new bootstrap.Modal(rejectModalEl);
+            modal.show();
+        });
+    });
+
+    rejectConfirmBtn.addEventListener('click', function () {
+        if (rejectTargetForm) rejectTargetForm.submit();
+    });
+});
+</script>
 @endsection

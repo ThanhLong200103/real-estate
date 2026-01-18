@@ -25,6 +25,14 @@
         100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
     }
     .animate-pulse-warn { animation: pulse-warn 2s infinite; }
+
+    /* ✅ Modal delete style */
+    .confirm-box-danger{
+        background: #fff5f5;
+        border: 1px solid #ffe0e0;
+        border-radius: 16px;
+        padding: 14px 16px;
+    }
 </style>
 
 <div class="container-fluid">
@@ -88,7 +96,7 @@
                                     <span class="text-truncate">{{ Str::limit($post->address, 35) }}</span>
                                 </div>
 
-                                {{-- PHẦN CẬP NHẬT: Badge Loại hình theo yêu cầu --}}
+                                {{-- Badge Loại hình --}}
                                 <div class="mb-2">
                                     @php
                                         $categoryName = $post->category->name ?? 'Khác';
@@ -140,15 +148,24 @@
                                 <div class="d-flex justify-content-center gap-2">
                                     <form action="{{ route('approve-sale-post-admin', $post->id) }}" method="POST">
                                         @csrf @method('PATCH')
-                                        
+                                        {{-- (Nếu bạn muốn custom approve bằng modal, mình thêm tiếp. Hiện bạn đang để trống) --}}
                                     </form>
                                     
                                     <div class="btn-group border rounded-3 overflow-hidden">
                                         <a href="{{ route('show-sale-post-admin', $post->id) }}" class="btn btn-sm btn-action"><i class="fas fa-eye text-primary"></i></a>
                                         <a href="{{ route('edit-sale-post-admin', $post->id) }}" class="btn btn-sm btn-action"><i class="fas fa-pen text-warning"></i></a>
-                                        <form action="{{ route('destroy-sale-post-admin', $post->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Từ chối và xóa tin này?');">
+
+                                        {{-- ✅ DELETE: bỏ confirm() -> dùng modal --}}
+                                        <form action="{{ route('destroy-sale-post-admin', $post->id) }}"
+                                              method="POST"
+                                              class="d-inline delete-form m-0">
                                             @csrf @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-action"><i class="fas fa-trash-alt text-danger"></i></button>
+                                            <button type="button"
+                                                    class="btn btn-sm btn-action btn-open-delete-modal"
+                                                    data-id="{{ $post->id }}"
+                                                    data-title="{{ e($post->title) }}">
+                                                <i class="fas fa-trash-alt text-danger"></i>
+                                            </button>
                                         </form>
                                     </div>
                                 </div>
@@ -174,4 +191,74 @@
         </div>
     @endif
 </div>
+
+{{-- ✅ MODAL XÁC NHẬN TỪ CHỐI + XÓA --}}
+<div class="modal fade" id="deletePendingModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 22px;">
+      <div class="modal-header border-0 px-4 pt-4">
+        <h5 class="modal-title fw-800">
+          <i class="fas fa-trash-alt me-2 text-danger"></i>Từ chối & xóa tin
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body px-4">
+        <div class="confirm-box-danger">
+          <div class="fw-800 text-danger mb-1">Bạn chắc chắn muốn xóa vĩnh viễn?</div>
+          <div class="small text-muted">
+            <div class="mb-2">ID: <b id="deletePendingId"></b></div>
+            <div>Tiêu đề: <b id="deletePendingTitle" style="line-height:1.4;"></b></div>
+          </div>
+        </div>
+
+        <div class="small text-muted mt-3">
+          Hành động này không thể hoàn tác. Tin đăng sẽ bị xóa khỏi hệ thống.
+        </div>
+      </div>
+
+      <div class="modal-footer border-0 px-4 pb-4">
+        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+        <button type="button" class="btn btn-danger rounded-pill px-4 fw-800" id="deletePendingConfirmBtn">
+          Xóa ngay
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{-- Nếu admin.layout đã có bootstrap bundle thì KHÔNG cần thêm --}}
+{{-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> --}}
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalEl = document.getElementById('deletePendingModal');
+    const idEl = document.getElementById('deletePendingId');
+    const titleEl = document.getElementById('deletePendingTitle');
+    const confirmBtn = document.getElementById('deletePendingConfirmBtn');
+
+    if (!modalEl || !idEl || !titleEl || !confirmBtn) return;
+
+    let targetForm = null;
+
+    document.querySelectorAll('.btn-open-delete-modal').forEach(btn => {
+        btn.addEventListener('click', function () {
+            targetForm = this.closest('form.delete-form');
+
+            idEl.textContent = '#' + (this.dataset.id || '');
+            titleEl.textContent = this.dataset.title || 'Tin đăng';
+
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        });
+    });
+
+    confirmBtn.addEventListener('click', function () {
+        if (targetForm) targetForm.submit();
+    });
+});
+</script>
+@endpush
+
 @endsection

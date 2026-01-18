@@ -14,6 +14,22 @@
     .thumb-img { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; }
     .thumb-wrapper:hover .thumb-img { transform: scale(1.1); }
     .badge-type { position: absolute; top: 2px; right: 2px; font-size: 8px; padding: 2px 5px; border-radius: 4px; z-index: 10; }
+
+    /* ✅ Modal confirm style đồng bộ */
+    .confirm-box {
+        border-radius: 16px;
+        padding: 14px 16px;
+        border: 1px solid rgba(0,0,0,0.06);
+        background: #f8fafc;
+    }
+    .confirm-box.danger {
+        background: #fff5f5;
+        border-color: #ffe0e0;
+    }
+    .confirm-box.success {
+        background: #ecfdf5;
+        border-color: #bbf7d0;
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -65,16 +81,14 @@
                                 <img src="{{ $src }}" class="thumb-img" onerror="this.src='https://placehold.co/600x400?text=Error+Image'">
                             </div>
                         </td>
+
                         <td>
                             <div class="fw-bold text-dark mb-1">{{ Str::limit($post->title, 50) }}</div>
                             
-                            {{-- PHẦN CẬP NHẬT: Badge Loại hình lấy trực tiếp từ Database --}}
+                            {{-- Badge Loại hình lấy trực tiếp từ Database --}}
                             <div class="mb-2 d-flex gap-1">
                                 @php
-                                    // Lấy tên từ quan hệ category
                                     $categoryName = $post->category->name ?? 'Chưa phân loại';
-                                    
-                                    // Gán màu sắc dựa trên tên danh mục
                                     $badgeClass = match($categoryName) {
                                         'Căn hộ'  => 'bg-primary-subtle text-primary',
                                         'Nhà phố' => 'bg-info-subtle text-info',
@@ -92,6 +106,7 @@
                                 {{ Str::limit($post->address, 40) }}
                             </small>
                         </td>
+
                         <td>
                             <div class="price-text-pending">
                                 @if($post->type == 'sale')
@@ -104,6 +119,7 @@
                                 {{ $post->area }} m²
                             </div>
                         </td>
+
                         <td>
                             <div class="d-flex align-items-center">
                                 <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center me-2">
@@ -115,23 +131,47 @@
                                 </div>
                             </div>
                         </td>
+
                         <td class="pe-4 text-center">
                             <div class="d-flex justify-content-center gap-2">
                                 @if($post->status == 0)
-                                <form action="{{ route('approve-sale-post-admin', $post->id) }}" method="POST" up-submit up-target=".main-content, #admin-sidebar-nav">
-                                    @csrf @method('PATCH')
-                                    <button type="submit" class="btn btn-sm btn-success px-3 fw-800 shadow-sm" style="border-radius: 8px;" onclick="return confirm('Phê duyệt tin đăng này?')">
-                                        <i class="fas fa-check-circle me-1"></i> DUYỆT
-                                    </button>
-                                </form>
+                                    {{-- ✅ DUYỆT: bỏ confirm() -> dùng modal --}}
+                                    <form action="{{ route('approve-sale-post-admin', $post->id) }}"
+                                          method="POST"
+                                          class="m-0 approve-form"
+                                          up-submit up-target=".main-content, #admin-sidebar-nav">
+                                        @csrf @method('PATCH')
+
+                                        <button type="button"
+                                                class="btn btn-sm btn-success px-3 fw-800 shadow-sm btn-open-approve-modal"
+                                                style="border-radius: 8px;"
+                                                data-title="{{ e($post->title) }}"
+                                                data-type="{{ $post->type == 'sale' ? 'Bán' : 'Thuê' }}">
+                                            <i class="fas fa-check-circle me-1"></i> DUYỆT
+                                        </button>
+                                    </form>
                                 @endif
 
                                 <div class="btn-group shadow-sm border rounded-3 overflow-hidden">
-                                    <a href="{{ route('show-sale-post-admin', $post->id) }}" class="btn btn-sm btn-white bg-white" up-follow up-target=".main-content"><i class="fas fa-eye text-primary"></i></a>
-                                    <a href="{{ route('edit-sale-post-admin', $post->id) }}" class="btn btn-sm btn-white bg-white" up-follow up-target=".main-content"><i class="fas fa-pen-nib text-warning"></i></a>
-                                    <form action="{{ route('destroy-sale-post-admin', $post->id) }}" method="POST" onsubmit="return confirm('Xóa vĩnh viễn tin đăng này?')" up-submit up-target=".main-content, #admin-sidebar-nav">
+                                    <a href="{{ route('show-sale-post-admin', $post->id) }}" class="btn btn-sm btn-white bg-white" up-follow up-target=".main-content">
+                                        <i class="fas fa-eye text-primary"></i>
+                                    </a>
+                                    <a href="{{ route('edit-sale-post-admin', $post->id) }}" class="btn btn-sm btn-white bg-white" up-follow up-target=".main-content">
+                                        <i class="fas fa-pen-nib text-warning"></i>
+                                    </a>
+
+                                    {{-- ✅ XÓA: bỏ confirm() -> dùng modal --}}
+                                    <form action="{{ route('destroy-sale-post-admin', $post->id) }}"
+                                          method="POST"
+                                          class="m-0 delete-form"
+                                          up-submit up-target=".main-content, #admin-sidebar-nav">
                                         @csrf @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-white bg-white"><i class="fas fa-trash-alt text-danger"></i></button>
+                                        <button type="button"
+                                                class="btn btn-sm btn-white bg-white btn-open-delete-modal"
+                                                data-title="{{ e($post->title) }}"
+                                                data-type="{{ $post->type == 'sale' ? 'Bán' : 'Thuê' }}">
+                                            <i class="fas fa-trash-alt text-danger"></i>
+                                        </button>
                                     </form>
                                 </div>
                             </div>
@@ -155,4 +195,131 @@
 <div class="mt-4 d-flex justify-content-center" up-nav>
     {{ $items->appends(request()->query())->links('pagination::bootstrap-5') }}
 </div>
+
+{{-- ✅ MODAL: XÁC NHẬN DUYỆT --}}
+<div class="modal fade" id="approvePostModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+      <div class="modal-header border-0 px-4 pt-4">
+        <h5 class="modal-title fw-800">
+          <i class="fas fa-check-circle me-2 text-success"></i>Xác nhận phê duyệt
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body px-4">
+        <div class="confirm-box success">
+          <div class="fw-800 text-success mb-1">Duyệt tin đăng này?</div>
+          <div class="small text-muted">
+            <div class="mb-1">Loại: <span class="badge bg-dark" id="approveTypeBadge"></span></div>
+            <div>Tiêu đề: <b id="approvePostTitle"></b></div>
+          </div>
+        </div>
+        <div class="small text-muted mt-3">
+          Sau khi duyệt, bài đăng sẽ được hiển thị công khai.
+        </div>
+      </div>
+
+      <div class="modal-footer border-0 px-4 pb-4">
+        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+        <button type="button" class="btn btn-success rounded-pill px-4 fw-800" id="approveConfirmBtn">
+          Xác nhận duyệt
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{-- ✅ MODAL: XÁC NHẬN XÓA --}}
+<div class="modal fade" id="deletePostModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+      <div class="modal-header border-0 px-4 pt-4">
+        <h5 class="modal-title fw-800">
+          <i class="fas fa-trash-alt me-2 text-danger"></i>Xác nhận xóa
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body px-4">
+        <div class="confirm-box danger">
+          <div class="fw-800 text-danger mb-1">Xóa vĩnh viễn tin đăng?</div>
+          <div class="small text-muted">
+            <div class="mb-1">Loại: <span class="badge bg-dark" id="deleteTypeBadge"></span></div>
+            <div>Tiêu đề: <b id="deletePostTitle"></b></div>
+          </div>
+        </div>
+        <div class="small text-muted mt-3">
+          Hành động này không thể hoàn tác. Ảnh và dữ liệu liên quan có thể bị mất.
+        </div>
+      </div>
+
+      <div class="modal-footer border-0 px-4 pb-4">
+        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+        <button type="button" class="btn btn-danger rounded-pill px-4 fw-800" id="deleteConfirmBtn">
+          Xóa ngay
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{-- Bootstrap bundle (nếu admin.layout đã có thì xoá dòng này để tránh trùng) --}}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // ===== Approve =====
+    const approveModalEl = document.getElementById('approvePostModal');
+    const approveTitleEl = document.getElementById('approvePostTitle');
+    const approveTypeEl  = document.getElementById('approveTypeBadge');
+    const approveConfirmBtn = document.getElementById('approveConfirmBtn');
+    let approveTargetForm = null;
+
+    document.querySelectorAll('.btn-open-approve-modal').forEach(btn => {
+        btn.addEventListener('click', function () {
+            approveTargetForm = this.closest('form.approve-form');
+
+            const title = this.dataset.title || 'Tin đăng';
+            const type  = this.dataset.type || '';
+
+            approveTitleEl.textContent = title;
+            approveTypeEl.textContent  = type;
+
+            const modal = new bootstrap.Modal(approveModalEl);
+            modal.show();
+        });
+    });
+
+    approveConfirmBtn.addEventListener('click', function () {
+        if (approveTargetForm) approveTargetForm.submit();
+    });
+
+    // ===== Delete =====
+    const deleteModalEl = document.getElementById('deletePostModal');
+    const deleteTitleEl = document.getElementById('deletePostTitle');
+    const deleteTypeEl  = document.getElementById('deleteTypeBadge');
+    const deleteConfirmBtn = document.getElementById('deleteConfirmBtn');
+    let deleteTargetForm = null;
+
+    document.querySelectorAll('.btn-open-delete-modal').forEach(btn => {
+        btn.addEventListener('click', function () {
+            deleteTargetForm = this.closest('form.delete-form');
+
+            const title = this.dataset.title || 'Tin đăng';
+            const type  = this.dataset.type || '';
+
+            deleteTitleEl.textContent = title;
+            deleteTypeEl.textContent  = type;
+
+            const modal = new bootstrap.Modal(deleteModalEl);
+            modal.show();
+        });
+    });
+
+    deleteConfirmBtn.addEventListener('click', function () {
+        if (deleteTargetForm) deleteTargetForm.submit();
+    });
+});
+</script>
 @endsection

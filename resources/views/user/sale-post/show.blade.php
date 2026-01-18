@@ -402,7 +402,11 @@
                             <a href="{{ route('login-form') }}" class="btn-custom btn-primary-custom justify-content-center py-3">Đăng nhập để liên hệ</a>
                         @endauth
 
-                        <a href="tel:0123456789" class="btn-custom border w-100 justify-content-center py-3 text-dark fw-bold">
+                        <!-- ✅ ĐỔI THẺ ĐIỆN THOẠI: click -> hiện modal bảo trì -->
+                        <a href="#"
+                           class="btn-custom border w-100 justify-content-center py-3 text-dark fw-bold phone-maintenance"
+                           data-phone="0123.456.789"
+                           onclick="return false;">
                             <i class="fas fa-phone-alt text-success"></i> 0123.456.789
                         </a>
                     </div>
@@ -461,6 +465,36 @@
     </div>
 </div>
 
+<!-- ✅ MODAL BẢO TRÌ LIÊN HỆ ĐIỆN THOẠI -->
+<div class="modal fade" id="phoneMaintenanceModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 26px;">
+      <div class="modal-header border-0 px-4 pt-4">
+        <h5 class="modal-title fw-800">
+          <i class="fas fa-tools me-2 text-warning"></i>Thông báo
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body px-4 pb-0">
+        <div class="p-3 rounded-4" style="background:#fff7ed; border:1px solid #fed7aa;">
+          <div class="fw-bold mb-1" style="color:#9a3412;">Tính năng đang bảo trì</div>
+          <div class="text-muted small" id="phoneMaintenanceText">
+            Hiện tại bạn chưa thể gọi trực tiếp từ hệ thống. Vui lòng thử lại sau.
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer border-0 px-4 pb-4">
+        <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
+        <a href="{{ route('contacts.start') }}" class="btn btn-primary-custom rounded-pill px-4">
+          <i class="fas fa-comment-dots me-2"></i>Nhắn tin thay thế
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -499,6 +533,25 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(error => console.error('Error:', error));
+
+    /* ✅ CLICK SỐ ĐIỆN THOẠI -> HIỆN MODAL BẢO TRÌ */
+    const phoneBtn = document.querySelector('.phone-maintenance');
+    if (phoneBtn) {
+        phoneBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            const phone = this.dataset.phone || '';
+            const modalEl = document.getElementById('phoneMaintenanceModal');
+            const textEl  = document.getElementById('phoneMaintenanceText');
+
+            if (textEl && phone) {
+                textEl.innerHTML = `Bạn đã chọn liên hệ số <b>${phone}</b>.<br>Hiện tại tính năng này đang bảo trì. Vui lòng thử lại sau.`;
+            }
+
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        });
+    }
 });
 </script>
 

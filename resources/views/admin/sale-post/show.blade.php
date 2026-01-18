@@ -44,6 +44,14 @@
 
     .type-label { position: absolute; top: 20px; left: 20px; z-index: 10; padding: 8px 16px; border-radius: 12px; font-weight: 800; color: white; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
     .bg-primary-soft { background-color: #e0e7ff; color: #4338ca; }
+
+    /* ✅ Modal confirm delete style */
+    .confirm-box-danger{
+        background:#fff5f5;
+        border:1px solid #ffe0e0;
+        border-radius:16px;
+        padding:14px 16px;
+    }
 </style>
 
 <div class="container-fluid py-4">
@@ -95,10 +103,7 @@
                             <tr>
                                 <th><i class="fas fa-tags me-2"></i> Danh mục</th>
                                 <td>
-                                    @php
-                                        // DB của bạn là category_id -> quan hệ category là object
-                                        $catName = $item->category?->name ?? 'Chưa phân loại';
-                                    @endphp
+                                    @php $catName = $item->category?->name ?? 'Chưa phân loại'; @endphp
                                     <span class="badge bg-secondary px-3 py-2 rounded-pill fw-bold">
                                         {{ $catName }}
                                     </span>
@@ -216,14 +221,17 @@
                 </a>
 
                 <div class="d-flex gap-3">
-                    {{-- QUAN TRỌNG: Tắt Unpoly với form submit để redirect/session hoạt động chuẩn --}}
+                    {{-- ✅ DELETE: bỏ confirm() -> dùng modal --}}
                     <form action="{{ route('destroy-sale-post-admin', $item->id) }}"
                           method="POST"
-                          onsubmit="return confirm('Xóa bài đăng này vĩnh viễn?')"
+                          class="m-0 delete-form"
                           up-disable>
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn btn-outline-danger border-0 fw-bold">
+                        <button type="button"
+                                class="btn btn-outline-danger border-0 fw-bold btn-open-delete-modal"
+                                data-id="{{ $item->id }}"
+                                data-title="{{ e($item->title) }}">
                             <i class="fas fa-trash-alt me-2"></i> Gỡ bỏ tin
                         </button>
                     </form>
@@ -253,6 +261,42 @@
     </div>
 </div>
 
+{{-- ✅ MODAL XÁC NHẬN XÓA --}}
+<div class="modal fade" id="deletePostModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 22px;">
+      <div class="modal-header border-0 px-4 pt-4">
+        <h5 class="modal-title fw-800">
+          <i class="fas fa-trash-alt me-2 text-danger"></i>Xác nhận gỡ bỏ tin
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body px-4">
+        <div class="confirm-box-danger">
+          <div class="fw-800 text-danger mb-1">Xóa vĩnh viễn bài đăng này?</div>
+          <div class="small text-muted">
+            <div class="mb-2">ID: <b id="deletePostId"></b></div>
+            <div>Tiêu đề: <b id="deletePostTitle" style="line-height:1.4;"></b></div>
+          </div>
+        </div>
+
+        <div class="small text-muted mt-3">
+          Hành động này không thể hoàn tác. Tin đăng sẽ bị xóa khỏi hệ thống.
+        </div>
+      </div>
+
+      <div class="modal-footer border-0 px-4 pb-4">
+        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+        <button type="button" class="btn btn-danger rounded-pill px-4 fw-800" id="deleteConfirmBtn">
+          Xóa ngay
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@push('scripts')
 <script>
     function changeImage(element, src) {
         const mainImg = document.getElementById('mainImage');
@@ -267,6 +311,35 @@
         document.querySelectorAll('.img-grid-item').forEach(item => item.classList.remove('active'));
         element.classList.add('active');
     }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const modalEl = document.getElementById('deletePostModal');
+        const idEl = document.getElementById('deletePostId');
+        const titleEl = document.getElementById('deletePostTitle');
+        const confirmBtn = document.getElementById('deleteConfirmBtn');
+
+        if (!modalEl || !idEl || !titleEl || !confirmBtn) return;
+
+        let targetForm = null;
+
+        document.querySelectorAll('.btn-open-delete-modal').forEach(btn => {
+            btn.addEventListener('click', function () {
+                targetForm = this.closest('form.delete-form');
+
+                idEl.textContent = '#' + (this.dataset.id || '');
+                titleEl.textContent = this.dataset.title || 'Bài đăng';
+
+                const modal = new bootstrap.Modal(modalEl);
+                modal.show();
+            });
+        });
+
+        confirmBtn.addEventListener('click', function () {
+            if (targetForm) targetForm.submit();
+        });
+    });
 </script>
+@endpush
+
 @endif
 @endsection

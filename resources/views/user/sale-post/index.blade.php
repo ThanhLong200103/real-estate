@@ -97,6 +97,14 @@
         .btn-edit:hover { background: var(--primary); color: white; }
         .btn-delete { background: #fff5f5; color: #ff7675; }
         .btn-delete:hover { background: #ff7675; color: white; }
+
+        /* ✅ Custom modal delete */
+        .delete-warning-box{
+            background: #fff5f5;
+            border: 1px solid #ffe0e0;
+            border-radius: 18px;
+            padding: 14px 16px;
+        }
     </style>
 </head>
 <body>
@@ -219,10 +227,19 @@
                         </td>
                         <td class="text-end">
                             <div class="d-flex justify-content-end gap-2">
-                                <a href="{{ route('user-edit-sale-post', $post->id) }}" class="btn-action btn-edit" title="Sửa"><i class="fas fa-edit"></i></a>
-                                <form action="{{ route('user-destroy-sale-post', $post->id) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa?')">
+                                <a href="{{ route('user-edit-sale-post', $post->id) }}" class="btn-action btn-edit" title="Sửa">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+
+                                <!-- ✅ FORM XOÁ: bỏ confirm() và dùng modal -->
+                                <form action="{{ route('user-destroy-sale-post', $post->id) }}" method="POST" class="m-0 delete-form">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="btn-action btn-delete"><i class="fas fa-trash-alt"></i></button>
+                                    <button type="button"
+                                            class="btn-action btn-delete btn-open-delete-modal"
+                                            title="Xóa"
+                                            data-title="{{ e($post->title) }}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
                                 </form>
                             </div>
                         </td>
@@ -247,3 +264,67 @@
 </main>
 
 @include('layouts.footer')
+
+<!-- ✅ MODAL XÁC NHẬN XOÁ -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 26px;">
+      <div class="modal-header border-0 px-4 pt-4">
+        <h5 class="modal-title fw-800">
+          <i class="fas fa-trash-alt me-2 text-danger"></i>Xác nhận xóa
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body px-4">
+        <div class="delete-warning-box">
+          <div class="fw-bold text-danger mb-1">Hành động này không thể hoàn tác</div>
+          <div class="text-muted small">
+            Bạn có chắc muốn xoá bài:
+            <div class="fw-800 text-dark mt-2" id="deletePostTitle" style="line-height:1.4;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer border-0 px-4 pb-4">
+        <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+        <button type="button" class="btn btn-danger rounded-pill px-4 fw-800" id="confirmDeleteBtn">
+          Xóa ngay
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalEl = document.getElementById('deleteConfirmModal');
+    const titleEl = document.getElementById('deletePostTitle');
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+
+    if (!modalEl || !titleEl || !confirmBtn) return;
+
+    let targetForm = null;
+
+    document.querySelectorAll('.btn-open-delete-modal').forEach(btn => {
+        btn.addEventListener('click', function () {
+            targetForm = this.closest('form.delete-form');
+            const postTitle = this.dataset.title || 'bài đăng này';
+
+            titleEl.textContent = postTitle;
+
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        });
+    });
+
+    confirmBtn.addEventListener('click', function () {
+        if (targetForm) targetForm.submit();
+    });
+});
+</script>
+
+</body>
+</html>
