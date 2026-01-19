@@ -11,6 +11,7 @@ use App\Http\Controllers\NewsController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\CommentController; // --- ĐÃ THÊM ---
+use App\Http\Controllers\UserProfileController;
 use Illuminate\Support\Facades\Route;
 
 // --- 1. GIAO DIỆN CÔNG KHAI (Ai cũng xem được) ---
@@ -39,6 +40,12 @@ Route::middleware('auth')->group(function () {
 
     // Đăng xuất
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // Quản lý hồ sơ cá nhân
+    Route::get('/profile', [UserProfileController::class, 'showProfile'])->name('user.profile');
+    Route::put('/profile', [UserProfileController::class, 'updateProfile'])->name('user.profile.update');
+    Route::get('/profile/reset-password', [UserProfileController::class, 'showResetPassword'])->name('user.profile.reset-password');
+    Route::post('/profile/reset-password', [UserProfileController::class, 'resetPassword'])->name('user.profile.reset-password.post');
 
     // Quản lý bài đăng cá nhân của User
     Route::get('/sale-post-add', [SalePostController::class, 'create'])->name('create-sale-post');
