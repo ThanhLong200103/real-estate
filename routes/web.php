@@ -14,6 +14,7 @@ use App\Http\Controllers\CommentController; // --- ĐÃ THÊM ---
 use App\Http\Controllers\UserProfileController;
 use Illuminate\Support\Facades\Route;
 
+
 // --- 1. GIAO DIỆN CÔNG KHAI (Ai cũng xem được) ---
 Route::get('/', function () {
     return view('welcome');

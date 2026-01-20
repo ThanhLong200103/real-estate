@@ -12,20 +12,22 @@ class CommentController extends Controller
     {
         $request->validate([
             'content' => 'required|string|max:1000',
+            'parent_id' => 'nullable|exists:comments,id', // Kiểm tra parent_id nếu có phải tồn tại trong bảng comments
         ]);
 
         Comment::create([
             'user_id' => Auth::id(),
             'sale_post_id' => $postId,
             'content' => $request->content,
+            'parent_id' => $request->parent_id, // Lưu ID của bình luận cha (null nếu là bình luận gốc)
         ]);
 
-        return back()->with('success', 'Bình luận của bạn đã được gửi!');
+        return back()->with('success', 'Cảm ơn bạn đã để lại ý kiến!');
     }
 
     public function destroy(Comment $comment)
     {
-        // Kiểm tra quyền xóa (chỉ admin hoặc chủ comment)
+        // Khi xóa comment cha, các comment con sẽ tự động xóa nhờ "cascade" ở Migration
         if (Auth::id() === $comment->user_id || Auth::user()->role === 'admin') {
             $comment->delete();
             return back()->with('success', 'Đã xóa bình luận.');
