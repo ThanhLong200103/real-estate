@@ -3,87 +3,76 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\SalePost\StoreSalePostRequest;
-use App\Models\SalePost;
-use App\Models\Category;
+use App\Models\{SalePost, Category, Province, District, Ward};
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\{Auth, DB, Log, Storage};
+use App\Services\ProphetService;
+use Illuminate\Support\Str;
 
 class SalePostController extends Controller
 {
-    /**
-     * Trang chủ hiển thị tin đã được duyệt + Bộ lọc tìm kiếm
-     */
-    public function index(Request $request)
+
+    public function index(Request $request, ProphetService $prophetService)
     {
-        // Lấy danh sách Categories để hiển thị ở Select box bộ lọc
+
         $categories = Category::all();
+        $provinces  = Province::all();
 
-        // Eager loading 'category' và 'images' để tối ưu hiệu năng
-        $query = SalePost::with(['images', 'category'])->where('status', true);
 
-        // 1. Lọc theo từ khóa
-        if ($request->filled('keyword')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('title', 'like', '%' . $request->keyword . '%')
-                    ->orWhere('address', 'like', '%' . $request->keyword . '%');
-            });
+        $popularLocations = Province::withCount([
+            'sale_posts' => fn($q) => $q->where('status', true)
+        ])
+            ->orderByDesc('sale_posts_count')
+            ->limit(5)
+            ->get();
+
+        $latestPosts = SalePost::with(['images', 'province'])
+            ->where('status', true)
+            ->latest()
+            ->limit(8)
+            ->get();
+
+     
+        $query = SalePost::with([
+            'images',
+            'category',
+            'province',
+            'district',
+            'ward'
+        ])->where('status', true);
+
+        $this->applyFilters($query, $request);
+
+        $rentPosts = $query
+            ->latest()
+            ->paginate(12)
+            ->withQueryString();
+
+        $forecast = null;
+
+        $targetDistrictId = $request->filled('district_id')
+            ? (int) $request->district_id
+            : 1;
+
+        if ($targetDistrictId) {
+            $forecast = $prophetService->predictByDistrict($targetDistrictId);
         }
 
-        // 2. Lọc theo hình thức (sale/rent)
-        if ($request->filled('type')) {
-            $query->where('type', $request->type);
-        }
-
-        // 3. Lọc theo ID danh mục mới
-        if ($request->filled('category_id')) {
-            $query->where('category_id', $request->category_id);
-        }
-
-        // 4. Lọc theo mức giá
-        if ($request->filled('price_range')) {
-            $price = $request->price_range;
-            if ($price === '10000000000+') {
-                $query->where('price', '>=', 10000000000);
-            } else {
-                $range = explode('-', $price);
-                if (count($range) == 2) {
-                    $query->whereBetween('price', [(float)$range[0], (float)$range[1]]);
-                }
-            }
-        }
-
-        // 5. Lọc theo diện tích
-        if ($request->filled('area_range')) {
-            $area = $request->area_range;
-            if ($area === '200+') {
-                $query->where('area', '>=', 200);
-            } else {
-                $range = explode('-', $area);
-                if (count($range) == 2) {
-                    $query->whereBetween('area', [(float)$range[0], (float)$range[1]]);
-                }
-            }
-        }
-
-        // 6. Lọc theo số phòng ngủ
-        if ($request->filled('bedrooms')) {
-            $query->where('bedrooms', '>=', $request->bedrooms);
-        }
-
-        $rentPosts = $query->latest()->paginate(12);
-
-        return view('home', compact('rentPosts', 'categories'));
+    
+        return view('home', compact(
+            'rentPosts',
+            'categories',
+            'provinces',
+            'popularLocations',
+            'latestPosts',
+            'forecast' 
+        ));
     }
 
-    /**
-     * Danh sách tin đăng cá nhân của User
-     */
+
     public function myPosts()
     {
-        $myPosts = SalePost::with(['images', 'category'])
+        $myPosts = SalePost::with(['images', 'category', 'province', 'district', 'ward'])
             ->where('user_id', Auth::id())
             ->latest()
             ->paginate(10);
@@ -93,147 +82,236 @@ class SalePostController extends Controller
 
     public function create()
     {
-        $categories = Category::all();
-        return view('user.sale-post.create', compact('categories'));
+        return view('user.sale-post.create', [
+            'categories' => Category::all(),
+            'provinces'  => Province::all(),
+        ]);
     }
 
     public function store(StoreSalePostRequest $request)
     {
         try {
             DB::transaction(function () use ($request) {
-                $sale = SalePost::create([
+                $post = SalePost::create([
                     'user_id'      => Auth::id(),
                     'type'         => $request->type,
                     'category_id'  => $request->category_id,
+                    'province_id'  => $request->province_id,
+                    'district_id'  => $request->district_id,
+                    'ward_id'      => $request->ward_id,
                     'title'        => $request->title,
+                    'slug'         => Str::slug($request->title) . '-' . uniqid(),
                     'description'  => $request->description,
                     'price'        => $request->price ?? 0,
                     'area'         => $request->area ?? 0,
                     'address'      => $request->address,
-                    'bedrooms'     => (int)($request->bedrooms ?? 0),
-                    'bathrooms'    => (int)($request->bathrooms ?? 0),
-                    'is_furnished' => $request->has('is_furnished') ? 1 : 0,
+                    'bedrooms'     => $request->bedrooms ?? 0,
+                    'bathrooms'    => $request->bathrooms ?? 0,
+                    'is_furnished' => $request->boolean('is_furnished'),
                     'status'       => false,
                 ]);
 
-                if ($request->hasFile('images')) {
-                    foreach ($request->file('images') as $file) {
-                        $path = $file->store('posts', 'public');
-                        $sale->images()->create(['image_url' => $path]);
-                    }
-                }
+                $this->syncImages($post, $request);
             });
 
-            return redirect()->route('user-sale-post-index')->with('success', 'Tin đăng đã được gửi, vui lòng chờ duyệt!');
-        } catch (\Exception $e) {
-            Log::error("User Store Post Error: " . $e->getMessage());
-            return back()->withInput()->with('error', 'Có lỗi xảy ra: ' . $e->getMessage());
+            return redirect()->route('user-sale-post-index')
+                ->with('success', 'Tin đã gửi, vui lòng chờ duyệt!');
+        } catch (\Throwable $e) {
+
+            // Debug nhanh: Nếu vẫn lỗi, hãy tạm thời bỏ comment dòng dưới để xem lỗi thật là gì
+            // dd($e->getMessage());
+            Log::error($e);
+            return back()->withInput()->with('error', 'Có lỗi xảy ra.');
         }
     }
 
     public function show($id)
     {
-        $salePost = SalePost::with(['images', 'user', 'category', 'comments.user'])->findOrFail($id);
+        $salePost = SalePost::with([
+            'images',
+            'user',
+            'category',
+            'province',
+            'district',
+            'ward',
+            'comments.user',
+            'comments.replies.user'
+        ])->findOrFail($id);
 
-        
-        if (!$salePost->status) {
-            $isAdmin = Auth::check() && strcasecmp(Auth::user()->role, 'admin') === 0;
-            $isOwner = Auth::check() && $salePost->user_id == Auth::id();
-
-            if (!$isAdmin && !$isOwner) {
-                abort(404, 'Bài viết đang chờ duyệt.');
-            }
+        if (
+            !$salePost->status &&
+            !(
+                Auth::check() &&
+                (Auth::id() === $salePost->user_id || Auth::user()->role === 'admin')
+            )
+        ) {
+            abort(404);
         }
 
-        // Truyền đúng tên salePost ra view
         return view('user.sale-post.show', compact('salePost'));
     }
 
     public function edit($id)
     {
-        // Eager load images để hiển thị trong trang edit
         $rentPost = SalePost::with('images')->findOrFail($id);
-        $categories = Category::all();
+        abort_if($rentPost->user_id !== Auth::id(), 403);
 
-        if ($rentPost->user_id !== Auth::id()) {
-            abort(403, 'Bạn không có quyền sửa tin này.');
-        }
-
-        return view('user.sale-post.edit', compact('rentPost', 'categories'));
+        return view('user.sale-post.edit', [
+            'rentPost'   => $rentPost,
+            'categories' => Category::all(),
+            'provinces'  => Province::all(),
+            'districts'  => District::where('province_id', $rentPost->province_id)->get(),
+            'wards'      => Ward::where('district_id', $rentPost->district_id)->get(),
+        ]);
     }
 
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
         $rentPost = SalePost::findOrFail($id);
+        abort_if($rentPost->user_id !== Auth::id(), 403);
 
-        if ($rentPost->user_id !== Auth::id()) {
-            abort(403);
-        }
-
-        // Thêm Validation cho Category ID và các trường quan trọng
         $request->validate([
+            'province_id' => 'required|exists:provinces,id',
+            'district_id' => 'required|exists:districts,id',
+            'ward_id'     => 'required|exists:wards,id',
             'category_id' => 'required|exists:categories,id',
             'title'       => 'required|string|max:255',
             'type'        => 'required|in:sale,rent',
-            'price'       => 'required|numeric|min:0',
-            'area'        => 'required|numeric|min:0',
-            'address'     => 'required|string',
-            'description' => 'required|string',
-            'images.*'    => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'price'       => 'numeric|min:0',
+            'area'        => 'numeric|min:0',
         ]);
 
-        try {
-            DB::transaction(function () use ($request, $rentPost) {
-                $rentPost->update([
-                    'type'         => $request->type,
-                    'category_id'  => $request->category_id,
-                    'title'        => $request->title,
-                    'price'        => $request->price,
-                    'address'      => $request->address,
-                    'description'  => $request->description,
-                    'area'         => $request->area,
-                    'bedrooms'     => (int)($request->bedrooms ?? 0),
-                    'bathrooms'    => (int)($request->bathrooms ?? 0),
-                    'is_furnished' => $request->has('is_furnished') ? 1 : 0,
-                    'status'       => false, // Sửa tin thì bắt duyệt lại
-                ]);
+        DB::transaction(function () use ($request, $rentPost) {
+            $rentPost->update(
+                $request->except('images') + [
+                    'is_furnished' => $request->boolean('is_furnished'),
+                    'status'       => false,
+                ]
+            );
 
-                // Nếu upload ảnh mới, xóa sạch ảnh cũ (theo logic file Blade bạn gửi)
-                if ($request->hasFile('images')) {
-                    foreach ($rentPost->images as $oldImage) {
-                        Storage::disk('public')->delete($oldImage->image_url);
-                        $oldImage->delete();
-                    }
-                    foreach ($request->file('images') as $image) {
-                        $path = $image->store('posts', 'public');
-                        $rentPost->images()->create(['image_url' => $path]);
-                    }
-                }
+            $this->syncImages($rentPost, $request, true);
+        });
+
+        return redirect()->route('user-sale-post-index')
+            ->with('success', 'Cập nhật thành công, chờ duyệt lại.');
+    }
+
+    public function destroy($id)
+    {
+        $post = SalePost::with('images')->findOrFail($id);
+
+        abort_if(
+            $post->user_id !== Auth::id() &&
+                Auth::user()->role !== 'admin',
+            403
+        );
+
+        DB::transaction(function () use ($post) {
+            foreach ($post->images as $img) {
+                Storage::disk('public')->delete($img->image_url);
+            }
+            $post->images()->delete();
+            $post->delete();
+        });
+
+        return back()->with('success', 'Đã xóa bài đăng.');
+    }
+
+    public function provinceIndex(Request $request, $slug)
+    {
+        $province = Province::where('slug', $slug)->firstOrFail();
+
+        $query = SalePost::with(['images', 'category', 'province', 'district', 'ward'])
+            ->where('province_id', $province->id)
+            ->where('status', true);
+
+        $this->applyFilters($query, $request);
+
+        $rentPosts = $query->latest()->paginate(15)->withQueryString();
+
+        return view('user.sale-post.location', [
+            'rentPosts'  => $rentPosts,
+            'province'   => $province,
+            'provinces'  => Province::all(),
+            'categories' => Category::all(),
+        ]);
+    }
+
+    private function applyFilters($query, Request $request)
+    {
+        // 🔹 Province
+        if ($request->has('province_id') && is_numeric($request->province_id)) {
+            $query->where('province_id', (int) $request->province_id);
+        }
+
+        // 🔹 District
+        if ($request->has('district_id') && is_numeric($request->district_id)) {
+            $query->where('district_id', (int) $request->district_id);
+        }
+
+        // 🔹 Ward
+        if ($request->has('ward_id') && is_numeric($request->ward_id)) {
+            $query->where('ward_id', (int) $request->ward_id);
+        }
+
+        // 🔹 Category
+        if ($request->has('category_id') && is_numeric($request->category_id)) {
+            $query->where('category_id', (int) $request->category_id);
+        }
+
+        // 🔹 Type
+        if ($request->has('type') && in_array($request->type, ['sale', 'rent'])) {
+            $query->where('type', $request->type);
+        }
+
+        // 🔹 Keyword
+        if ($request->has('keyword') && trim($request->keyword) !== '') {
+            $keyword = trim($request->keyword);
+            $query->where(function ($q) use ($keyword) {
+                $q->where('title', 'like', "%{$keyword}%")
+                    ->orWhere('address', 'like', "%{$keyword}%");
             });
+        }
 
-            return redirect()->route('user-sale-post-index')->with('success', 'Cập nhật thành công, vui lòng chờ duyệt lại!');
-        } catch (\Exception $e) {
-            Log::error("User Update Post Error: " . $e->getMessage());
-            return back()->withInput()->with('error', 'Lỗi: ' . $e->getMessage());
+        // 🔹 Price range
+        $this->rangeFilter($query, 'price', $request->price_range);
+
+        // 🔹 Area range
+        $this->rangeFilter($query, 'area', $request->area_range);
+
+        // 🔹 Bedrooms
+        if ($request->has('bedrooms') && is_numeric($request->bedrooms)) {
+            $query->where('bedrooms', '>=', (int) $request->bedrooms);
         }
     }
 
-    public function destroy(string $id)
+
+
+    private function rangeFilter($query, $field, $value)
     {
-        $rentPost = SalePost::with('images')->findOrFail($id);
+        if (!$value) return;
 
-        if ($rentPost->user_id !== Auth::id() && strcasecmp(Auth::user()->role, 'admin') !== 0) {
-            abort(403);
+        if (str_contains($value, '+')) {
+            $query->where($field, '>=', (float) rtrim($value, '+'));
+        } else {
+            [$min, $max] = explode('-', $value);
+            $query->whereBetween($field, [(float) $min, (float) $max]);
         }
+    }
 
-        DB::transaction(function () use ($rentPost) {
-            foreach ($rentPost->images as $image) {
-                Storage::disk('public')->delete($image->image_url);
+    private function syncImages($post, Request $request, $replace = false)
+    {
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                // 1. Lưu file vào thư mục storage/app/public/posts
+                $path = $image->store('posts', 'public');
+
+                // 2. Lưu vào bảng trung gian hoặc bảng images
+                // Đảm bảo tên cột trong create([]) phải là 'image_url'
+                $post->images()->create([
+                    'image_url' => $path, // Tên cột phải khớp chính xác với lỗi DB báo
+                ]);
             }
-            $rentPost->images()->delete();
-            $rentPost->delete();
-        });
-
-        return redirect()->route('user-sale-post-index')->with('success', 'Đã xóa bài đăng thành công.');
+        }
     }
 }

@@ -172,6 +172,16 @@
             font-size: 16px;
         }
 
+        .location-text {
+            font-size: 11px;
+            color: #718096;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
         .btn-action {
             width: 40px;
             height: 40px;
@@ -204,12 +214,58 @@
             color: white;
         }
 
-        /* ✅ Custom modal delete */
         .delete-warning-box {
             background: #fff5f5;
             border: 1px solid #ffe0e0;
             border-radius: 18px;
             padding: 14px 16px;
+        }
+
+        /* Sửa lỗi hiển thị phân trang (Pagination Fix) */
+        .pagination {
+            gap: 5px;
+            margin-top: 30px;
+        }
+
+        .page-item .page-link {
+            border: none;
+            padding: 10px 18px;
+            border-radius: 12px !important;
+            color: var(--dark);
+            font-weight: 600;
+            transition: all 0.3s ease;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .page-item.active .page-link {
+            background-color: var(--primary) !important;
+            color: white !important;
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
+        }
+
+        .page-item .page-link:hover {
+            background-color: var(--primary-light);
+            color: white;
+        }
+
+        /* Quan trọng: Thu nhỏ các icon SVG/mũi tên khổng lồ của Laravel */
+        .pagination svg,
+        .pagination i {
+            width: 20px !important;
+            height: 20px !important;
+        }
+
+        /* Ẩn bớt phần text thông báo "Showing..." nếu quá chật */
+        .pagination nav div:first-child {
+            display: none !important;
+        }
+
+        @media (max-width: 768px) {
+            .pagination nav {
+                flex-direction: column;
+                gap: 15px;
+            }
         }
     </style>
 </head>
@@ -260,9 +316,9 @@
     </header>
 
     <main class="container stats-container">
+        {{-- Phần hiển thị thông báo CRUD từ các file khác/xóa --}}
         @if (session('success'))
-            <div
-                class="alert alert-success border-0 shadow-lg mb-4 p-3 rounded-4 d-flex align-items-center animate__animated animate__fadeIn">
+            <div class="alert alert-success border-0 shadow-lg mb-4 p-3 rounded-4 d-flex align-items-center">
                 <i class="fas fa-check-circle fs-4 me-3"></i>
                 <span class="fw-bold">{{ session('success') }}</span>
                 <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
@@ -285,6 +341,7 @@
                     <div class="stat-icon" style="background: #e6fffa; color: var(--success);"><i
                             class="fas fa-globe-asia"></i></div>
                     <div>
+                        {{-- Sửa: Sử dụng $myPosts thay vì $rentPosts --}}
                         <h3 class="m-0 fw-800">{{ $myPosts->where('status', 1)->count() }}</h3>
                         <small class="text-muted fw-700">Đang hiển thị</small>
                     </div>
@@ -295,6 +352,7 @@
                     <div class="stat-icon" style="background: #fffaf0; color: var(--warning);"><i
                             class="fas fa-shield-alt"></i></div>
                     <div>
+                        {{-- Sửa: Sử dụng $myPosts thay vì $rentPosts --}}
                         <h3 class="m-0 fw-800">{{ $myPosts->where('status', 0)->count() }}</h3>
                         <small class="text-muted fw-700">Đang đợi duyệt</small>
                     </div>
@@ -337,6 +395,12 @@
                                                 {{ Str::limit($post->title, 50) }}
                                             </a>
                                             <div class="price-text">{{ $formatPrice($post->price) }}</div>
+
+                                            <div class="location-text">
+                                                <i class="fas fa-map-marker-alt text-danger"></i>
+                                                {{ $post->district->name ?? 'Quận chưa rõ' }},
+                                                {{ $post->province->name ?? 'Tỉnh chưa rõ' }}
+                                            </div>
                                         </div>
                                     </div>
                                 </td>
@@ -360,7 +424,6 @@
                                             <i class="fas fa-edit"></i>
                                         </a>
 
-                                        <!-- ✅ FORM XOÁ: bỏ confirm() và dùng modal -->
                                         <form action="{{ route('user-destroy-sale-post', $post->id) }}" method="POST"
                                             class="m-0 delete-form">
                                             @csrf @method('DELETE')
@@ -388,14 +451,14 @@
             </div>
         </div>
 
-        <div class="d-flex justify-content-center mt-5">
-            {{ $myPosts->links() }}
+        <div class="d-flex justify-content-center mt-5 pb-5">
+            {{ $myPosts->links('pagination::bootstrap-5') }}
         </div>
     </main>
 
     @include('layouts.footer')
 
-    <!-- ✅ MODAL XÁC NHẬN XOÁ -->
+    {{-- Modal Xác nhận xóa --}}
     <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 26px;">
@@ -405,7 +468,6 @@
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-
                 <div class="modal-body px-4">
                     <div class="delete-warning-box">
                         <div class="fw-bold text-danger mb-1">Hành động này không thể hoàn tác</div>
@@ -415,13 +477,11 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="modal-footer border-0 px-4 pb-4">
                     <button type="button" class="btn btn-secondary rounded-pill px-4"
                         data-bs-dismiss="modal">Hủy</button>
-                    <button type="button" class="btn btn-danger rounded-pill px-4 fw-800" id="confirmDeleteBtn">
-                        Xóa ngay
-                    </button>
+                    <button type="button" class="btn btn-danger rounded-pill px-4 fw-800" id="confirmDeleteBtn">Xóa
+                        ngay</button>
                 </div>
             </div>
         </div>
@@ -443,9 +503,7 @@
                 btn.addEventListener('click', function() {
                     targetForm = this.closest('form.delete-form');
                     const postTitle = this.dataset.title || 'bài đăng này';
-
                     titleEl.textContent = postTitle;
-
                     const modal = new bootstrap.Modal(modalEl);
                     modal.show();
                 });
@@ -456,7 +514,6 @@
             });
         });
     </script>
-
 </body>
 
 </html>

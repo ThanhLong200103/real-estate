@@ -2,13 +2,8 @@
 
 @section('content')
 @php
-    // Tự động bắt biến từ Controller bất kể tên gì
     $item = $post ?? $salePost ?? $rentPost ?? $item ?? null;
-
-    // Xác định type để quay lại đúng tab sale/rent
     $type = $item?->type ?? request('type', 'sale');
-
-    // Quay lại đúng trang (true/false) + giữ type
     $backRoute = ($item && $item->status)
         ? route('index-true-sale-post-admin', ['type' => $type])
         : route('index-false-sale-post-admin', ['type' => $type]);
@@ -18,325 +13,239 @@
     <div class="container-fluid py-5 text-center">
         <div class="display-1 text-muted opacity-25 mb-4"><i class="fas fa-search"></i></div>
         <h4 class="fw-bold">Không tìm thấy dữ liệu bài đăng</h4>
-        <a href="{{ route('index-false-sale-post-admin', ['type' => $type]) }}"
-           class="btn btn-primary rounded-pill px-4"
-           up-follow>
-            Quay lại danh sách
-        </a>
+        <a href="{{ $backRoute }}" class="btn btn-primary rounded-pill px-4" up-follow>Quay lại danh sách</a>
     </div>
 @else
 
 <style>
-    .detail-card { border: none; border-radius: 24px; overflow: hidden; background: white; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-    .table-detail th { background-color: #f8fafc; color: #64748b; font-weight: 600; width: 35%; border-left: 4px solid #4f46e5; padding: 15px 20px; }
-    .table-detail td { font-weight: 500; color: #1e293b; padding: 15px 20px; }
-    .price-large { font-size: 2.2rem; font-weight: 800; color: #4f46e5; letter-spacing: -1px; }
-    .description-box { background-color: #f8fafc; border-radius: 20px; padding: 30px; line-height: 1.8; color: #334155; border: 1px solid #e2e8f0; min-height: 150px; white-space: pre-line; }
+    /* Nâng cấp Card giao diện */
+    .detail-card { border: none; border-radius: 28px; background: white; box-shadow: 0 15px 35px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.03); }
+    
+    /* Bảng chi tiết sạch sẽ hơn */
+    .table-detail { margin-bottom: 0; }
+    .table-detail th { background-color: #fcfcfd; color: #94a3b8; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; width: 30%; padding: 18px 25px; border-bottom: 1px solid #f1f5f9; }
+    .table-detail td { font-weight: 600; color: #1e293b; padding: 18px 25px; border-bottom: 1px solid #f1f5f9; }
 
-    .img-main-container { border-radius: 20px; overflow: hidden; border: 1px solid #e2e8f0; height: 450px; background: #f1f5f9; position: relative; }
-    .img-full { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
-    .img-grid-item { border-radius: 12px; overflow: hidden; height: 100px; border: 2px solid transparent; cursor: pointer; transition: 0.3s; background: #f8fafc; }
-    .img-grid-item.active { border-color: #4f46e5; transform: translateY(-3px); }
-    .img-grid-item:hover { border-color: #4f46e5; }
+    /* Highlights */
+    .price-display { font-size: 2.4rem; font-weight: 900; color: #4f46e5; letter-spacing: -1.5px; line-height: 1; }
+    .area-badge { background: #f0f9ff; color: #0369a1; padding: 6px 14px; border-radius: 10px; font-weight: 800; }
+    
+    /* Location Tags hiện đại */
+    .loc-wrapper { display: flex; flex-wrap: wrap; gap: 8px; }
+    .loc-item { background: #f8fafc; border: 1px solid #e2e8f0; padding: 6px 12px; border-radius: 12px; font-size: 0.85rem; color: #475569; display: flex; align-items: center; }
+    .loc-item i { color: #6366f1; margin-right: 6px; font-size: 0.75rem; }
+    .loc-label { font-weight: 400; color: #94a3b8; margin-right: 4px; }
 
-    .badge-status { padding: 10px 20px; border-radius: 50px; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
-    .section-title { font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #4f46e5; letter-spacing: 1.5px; margin-bottom: 20px; display: block; }
+    /* Hình ảnh */
+    .img-main-wrapper { border-radius: 24px; overflow: hidden; height: 480px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    .img-grid-item { border-radius: 14px; height: 90px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); filter: grayscale(0.3); opacity: 0.8; }
+    .img-grid-item.active { filter: grayscale(0); opacity: 1; transform: scale(1.05); border: 3px solid #4f46e5; }
+    
+    .section-divider { display: flex; align-items: center; margin: 30px 0 20px; }
+    .section-divider span { font-size: 0.75rem; font-weight: 800; color: #6366f1; text-transform: uppercase; letter-spacing: 2px; white-space: nowrap; }
+    .section-divider::after { content: ""; flex-grow: 1; height: 1px; background: #e2e8f0; margin-left: 15px; }
 
-    .type-label { position: absolute; top: 20px; left: 20px; z-index: 10; padding: 8px 16px; border-radius: 12px; font-weight: 800; color: white; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
-    .bg-primary-soft { background-color: #e0e7ff; color: #4338ca; }
-
-    /* ✅ Modal confirm delete style */
-    .confirm-box-danger{
-        background:#fff5f5;
-        border:1px solid #ffe0e0;
-        border-radius:16px;
-        padding:14px 16px;
-    }
+    /* Nút bấm */
+    .btn-action { border-radius: 16px; padding: 12px 24px; font-weight: 700; transition: 0.3s; }
 </style>
 
 <div class="container-fluid py-4">
-    <div class="mb-4 d-flex justify-content-between align-items-center">
+    <div class="mb-4 d-flex justify-content-between align-items-end">
         <div>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-1">
-                    <li class="breadcrumb-item">
-                        <a href="{{ $backRoute }}" class="text-muted text-decoration-none" up-follow>Quản lý</a>
-                    </li>
-                    <li class="breadcrumb-item active text-primary fw-bold">Chi tiết bài đăng #{{ $item->id }}</li>
+            <nav aria-label="breadcrumb" class="mb-2">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{{ $backRoute }}" class="text-muted text-decoration-none">Hệ thống</a></li>
+                    <li class="breadcrumb-item active text-primary fw-bold">Chi tiết BĐS #{{ $item->id }}</li>
                 </ol>
             </nav>
-            <h2 class="fw-800 text-dark m-0">Kiểm duyệt nội dung</h2>
+            <h2 class="fw-900 text-dark m-0" style="letter-spacing: -1px;">Thông tin bài đăng</h2>
         </div>
-
-        <div class="d-flex gap-2">
+        <div class="text-end">
             @if($item->status)
-                <span class="badge bg-success text-white badge-status shadow-sm">
-                    <i class="fas fa-check-circle me-2"></i> Đang hiển thị
-                </span>
+                <div class="badge bg-success-subtle text-success px-4 py-2 rounded-pill fw-800 border border-success-subtle shadow-sm">
+                   <i class="fas fa-check-circle me-1"></i> ĐANG HIỂN THỊ
+                </div>
             @else
-                <span class="badge bg-warning text-dark badge-status shadow-sm">
-                    <i class="fas fa-clock me-2"></i> Chờ phê duyệt
-                </span>
+                <div class="badge bg-warning-subtle text-warning-emphasis px-4 py-2 rounded-pill fw-800 border border-warning-subtle shadow-sm">
+                   <i class="fas fa-clock me-1"></i> ĐANG CHỜ DUYỆT
+                </div>
             @endif
         </div>
     </div>
 
-    <div class="card detail-card shadow-sm mb-4">
+    <div class="card detail-card">
         <div class="card-body p-4 p-lg-5">
             <div class="row g-5">
+                {{-- Trái: Nội dung --}}
                 <div class="col-lg-7">
-                    <span class="section-title">Thông số kỹ thuật</span>
-                    <h3 class="fw-800 text-dark mb-4" style="line-height: 1.3;">{{ $item->title }}</h3>
+                    <div class="mb-4">
+                        <span class="price-display">{{ number_format($item->price) }} <small style="font-size: 1.2rem;">VNĐ{{ $item->type == 'rent' ? '/tháng' : '' }}</small></span>
+                    </div>
+                    
+                    <h3 class="fw-800 text-dark mb-4" style="line-height: 1.4; font-size: 1.75rem;">{{ $item->title }}</h3>
 
-                    <div class="table-responsive rounded-4 border overflow-hidden mb-5">
-                        <table class="table table-detail align-middle mb-0">
+                    <div class="section-divider"><span>Thông tin chi tiết</span></div>
+                    
+                    <div class="table-responsive rounded-4 border overflow-hidden shadow-sm mb-4">
+                        <table class="table table-detail align-middle">
                             <tr>
-                                <th><i class="fas fa-coins me-2"></i> Giá niêm yết</th>
+                                <th><i class="fas fa-map-marker-alt me-2 text-primary"></i> Vị trí khu vực</th>
                                 <td>
-                                    <span class="price-large">
-                                        {{ number_format($item->price) }} đ
-                                        <small class="text-muted fs-6 fw-normal">{{ $item->type == 'rent' ? '/ tháng' : '' }}</small>
-                                    </span>
+                                    <div class="loc-wrapper">
+                                        <div class="loc-item"><span class="loc-label">Tỉnh:</span>{{ $item->province?->name ?? '--' }}</div>
+                                        <div class="loc-item"><span class="loc-label">Quận:</span>{{ $item->district?->name ?? '--' }}</div>
+                                        <div class="loc-item"><span class="loc-label">Phường:</span>{{ $item->ward?->name ?? '--' }}</div>
+                                    </div>
+                                    <div class="mt-3 text-muted fw-normal small">
+                                        <i class="fas fa-home me-1"></i> {{ $item->address ?: 'Không có địa chỉ chi tiết' }}
+                                    </div>
                                 </td>
                             </tr>
-
                             <tr>
-                                <th><i class="fas fa-tags me-2"></i> Danh mục</th>
+                                <th><i class="fas fa-ruler-combined me-2 text-primary"></i> Diện tích & Loại hình</th>
                                 <td>
-                                    @php $catName = $item->category?->name ?? 'Chưa phân loại'; @endphp
-                                    <span class="badge bg-secondary px-3 py-2 rounded-pill fw-bold">
-                                        {{ $catName }}
-                                    </span>
+                                    <span class="area-badge">{{ $item->area }} m²</span>
+                                    <span class="ms-2 text-muted fw-bold">|</span>
+                                    <span class="ms-2 fw-bold text-dark">{{ $item->category?->name ?? 'Chưa rõ loại' }}</span>
                                 </td>
                             </tr>
-
                             <tr>
-                                <th><i class="fas fa-ruler-combined me-2"></i> Diện tích</th>
+                                <th><i class="fas fa-th-large me-2 text-primary"></i> Kết cấu</th>
                                 <td>
-                                    <span class="fs-5 fw-bold">{{ $item->area }} m²</span>
-                                    @if($item->area > 0)
-                                        <small class="text-muted">(Giá: {{ number_format($item->price / $item->area) }} đ/m²)</small>
-                                    @endif
+                                    <div class="d-flex gap-4">
+                                        <span><i class="fas fa-bed text-muted me-2"></i>{{ $item->bedrooms ?? 0 }} PN</span>
+                                        <span><i class="fas fa-bath text-muted me-2"></i>{{ $item->bathrooms ?? 0 }} WC</span>
+                                        @if($item->is_furnished)
+                                            <span class="text-success"><i class="fas fa-couch me-2"></i>Full nội thất</span>
+                                        @endif
+                                    </div>
                                 </td>
-                            </tr>
-
-                            <tr>
-                                <th><i class="fas fa-door-open me-2"></i> Bố cục</th>
-                                <td>
-                                    <span class="me-3 fw-bold"><i class="fas fa-bed text-primary me-1"></i> {{ $item->bedrooms ?? 0 }} PN</span>
-                                    <span class="fw-bold"><i class="fas fa-bath text-info me-1"></i> {{ $item->bathrooms ?? 0 }} PT</span>
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <th><i class="fas fa-couch me-2"></i> Nội thất</th>
-                                <td>
-                                    @if($item->is_furnished)
-                                        <span class="badge bg-primary-soft text-primary px-3 py-2 rounded-pill border border-primary border-opacity-25">
-                                            Đầy đủ nội thất
-                                        </span>
-                                    @else
-                                        <span class="text-muted"><i class="fas fa-times-circle me-1"></i> Cơ bản / Trống</span>
-                                    @endif
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <th><i class="fas fa-map-marker-alt me-2"></i> Địa chỉ</th>
-                                <td class="text-dark fw-bold">{{ $item->address }}</td>
                             </tr>
                         </table>
                     </div>
 
-                    <span class="section-title">Nội dung mô tả</span>
-                    <div class="description-box shadow-sm mb-4">
+                    <div class="section-divider"><span>Mô tả bài đăng</span></div>
+                    <div class="description-box">
                         {{ $item->description }}
                     </div>
                 </div>
 
+                {{-- Phải: Gallery --}}
                 <div class="col-lg-5">
-                    <span class="section-title">Thư viện ảnh ({{ $item->images->count() }})</span>
+                    <div class="img-main-wrapper mb-3">
+                        <div style="position: absolute; top: 15px; left: 15px; z-index: 5; background: #4f46e5; color: white; padding: 5px 15px; border-radius: 10px; font-weight: 800; font-size: 0.7rem;">
+                            {{ $item->type == 'sale' ? 'RAO BÁN' : 'CHO THUÊ' }}
+                        </div>
+                        @php
+                            $first = $item->images->first()?->image_url;
+                            $firstSrc = str_starts_with($first, 'http') ? $first : asset('storage/' . ltrim($first, '/'));
+                        @endphp
+                        <img src="{{ $firstSrc }}" class="img-full w-100 h-100" id="mainImage" style="object-fit: cover;">
+                    </div>
 
-                    @if($item->images->isNotEmpty())
-                        <div class="img-main-container mb-3 shadow-sm">
-                            <div class="type-label">{{ $item->type == 'sale' ? 'BÁN' : 'CHO THUÊ' }}</div>
-
+                    <div class="row g-2 mb-4">
+                        @foreach($item->images as $index => $img)
                             @php
-                                $first = $item->images->first()->image_url;
-                                $firstSrc = str_starts_with($first, 'http')
-                                    ? $first
-                                    : asset('storage/' . ltrim($first, '/'));
+                                $src = str_starts_with($img->image_url, 'http') ? $img->image_url : asset('storage/' . ltrim($img->image_url, '/'));
                             @endphp
+                            <div class="col-3">
+                                <img src="{{ $src }}" class="img-grid-item w-100 {{ $index == 0 ? 'active' : '' }}" 
+                                     style="object-fit: cover; cursor: pointer;" onclick="changeImage(this, '{{ $src }}')">
+                            </div>
+                        @endforeach
+                    </div>
 
-                            <img src="{{ $firstSrc }}" class="img-full" id="mainImage">
-                        </div>
-
-                        <div class="row g-2">
-                            @foreach($item->images as $index => $img)
-                                @php
-                                    $src = str_starts_with($img->image_url, 'http')
-                                        ? $img->image_url
-                                        : asset('storage/' . ltrim($img->image_url, '/'));
-                                @endphp
-
-                                <div class="col-3">
-                                    <div class="img-grid-item shadow-sm {{ $index == 0 ? 'active' : '' }}"
-                                         onclick="changeImage(this, '{{ $src }}')">
-                                        <img src="{{ $src }}" class="img-full">
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="text-center py-5 bg-light rounded-4 border-dashed-custom"
-                             style="min-height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px dashed #cbd5e1;">
-                            <i class="fas fa-image fa-3x text-muted opacity-25 mb-3"></i>
-                            <h5 class="text-dark fw-bold">Không có hình ảnh</h5>
-                        </div>
-                    @endif
-
-                    <div class="mt-4 p-4 rounded-4 bg-light border-0 d-flex align-items-center justify-content-between shadow-sm">
-                        <div class="d-flex align-items-center">
-                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 50px; height: 50px;">
+                    {{-- User Card --}}
+                    <div class="p-4 rounded-4 border bg-white shadow-sm d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-900" style="width: 55px; height: 55px; font-size: 1.2rem;">
                                 {{ strtoupper(substr($item->user->name ?? 'U', 0, 1)) }}
                             </div>
-                            <div class="ms-3">
-                                <h6 class="fw-800 text-dark mb-0">{{ $item->user->name ?? 'Người đăng' }}</h6>
-                                <small class="text-muted"><i class="fas fa-envelope me-1"></i>{{ $item->user->email ?? '' }}</small>
-                            </div>
                         </div>
-                        <div class="text-end">
-                            <div class="small text-muted">Ngày đăng</div>
-                            <div class="fw-bold text-dark">{{ $item->created_at ? $item->created_at->format('d/m/Y') : '--' }}</div>
+                        <div class="ms-3 flex-grow-1">
+                            <h6 class="fw-800 text-dark mb-0">{{ $item->user->name ?? 'Người đăng' }}</h6>
+                            <div class="small text-muted"><i class="fas fa-clock me-1"></i>Ngày đăng: {{ $item->created_at?->format('d/m/Y') }}</div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="card-footer p-4 bg-white border-top">
-            <div class="d-flex justify-content-between align-items-center">
-                <a href="{{ $backRoute }}" class="btn btn-light px-4 fw-bold" up-follow>
-                    <i class="fas fa-arrow-left me-2"></i> Quay lại
+        {{-- Footer --}}
+        <div class="card-footer p-4 bg-light-subtle border-top d-flex justify-content-between">
+            <a href="{{ $backRoute }}" class="btn btn-action btn-light shadow-sm">
+                <i class="fas fa-chevron-left me-2"></i> Quay lại
+            </a>
+            <div class="d-flex gap-2">
+                <form action="{{ route('destroy-sale-post-admin', $item->id) }}" method="POST" class="m-0 delete-form">
+                    @csrf @method('DELETE')
+                    <button type="button" class="btn btn-action btn-outline-danger btn-open-delete-modal" data-id="{{ $item->id }}" data-title="{{ e($item->title) }}">
+                        Gỡ tin đăng
+                    </button>
+                </form>
+                
+                <a href="{{ route('edit-sale-post-admin', $item->id) }}" class="btn btn-action btn-outline-warning">
+                    Sửa nội dung
                 </a>
 
-                <div class="d-flex gap-3">
-                    {{-- ✅ DELETE: bỏ confirm() -> dùng modal --}}
-                    <form action="{{ route('destroy-sale-post-admin', $item->id) }}"
-                          method="POST"
-                          class="m-0 delete-form"
-                          up-disable>
-                        @csrf
-                        @method('DELETE')
-                        <button type="button"
-                                class="btn btn-outline-danger border-0 fw-bold btn-open-delete-modal"
-                                data-id="{{ $item->id }}"
-                                data-title="{{ e($item->title) }}">
-                            <i class="fas fa-trash-alt me-2"></i> Gỡ bỏ tin
+                @if(!$item->status)
+                    <form action="{{ route('approve-sale-post-admin', $item->id) }}" method="POST" class="m-0">
+                        @csrf @method('PATCH')
+                        <button type="submit" class="btn btn-action btn-primary shadow-lg" style="background: #4f46e5; border: none; padding-left: 40px; padding-right: 40px;">
+                            PHÊ DUYỆT NGAY
                         </button>
                     </form>
-
-                    <a href="{{ route('edit-sale-post-admin', $item->id) }}"
-                       class="btn btn-outline-warning fw-bold px-4"
-                       up-follow>
-                        <i class="fas fa-edit me-2"></i> Chỉnh sửa
-                    </a>
-
-                    @if(!$item->status)
-                        <form action="{{ route('approve-sale-post-admin', $item->id) }}"
-                              method="POST"
-                              up-disable>
-                            @csrf
-                            @method('PATCH')
-                            <button type="submit"
-                                    class="btn btn-success fw-bold px-5 shadow-sm"
-                                    style="background: #10b981; border: none;">
-                                <i class="fas fa-check-double me-2"></i> PHÊ DUYỆT NGAY
-                            </button>
-                        </form>
-                    @endif
-                </div>
+                @endif
             </div>
         </div>
     </div>
 </div>
 
-{{-- ✅ MODAL XÁC NHẬN XÓA --}}
-<div class="modal fade" id="deletePostModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg" style="border-radius: 22px;">
-      <div class="modal-header border-0 px-4 pt-4">
-        <h5 class="modal-title fw-800">
-          <i class="fas fa-trash-alt me-2 text-danger"></i>Xác nhận gỡ bỏ tin
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-
-      <div class="modal-body px-4">
-        <div class="confirm-box-danger">
-          <div class="fw-800 text-danger mb-1">Xóa vĩnh viễn bài đăng này?</div>
-          <div class="small text-muted">
-            <div class="mb-2">ID: <b id="deletePostId"></b></div>
-            <div>Tiêu đề: <b id="deletePostTitle" style="line-height:1.4;"></b></div>
-          </div>
-        </div>
-
-        <div class="small text-muted mt-3">
-          Hành động này không thể hoàn tác. Tin đăng sẽ bị xóa khỏi hệ thống.
-        </div>
-      </div>
-
-      <div class="modal-footer border-0 px-4 pb-4">
-        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
-        <button type="button" class="btn btn-danger rounded-pill px-4 fw-800" id="deleteConfirmBtn">
-          Xóa ngay
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    // Hàm đổi ảnh (giữ nguyên của bạn)
     function changeImage(element, src) {
         const mainImg = document.getElementById('mainImage');
-        if(!mainImg) return;
-
         mainImg.style.opacity = '0.5';
         setTimeout(() => {
             mainImg.src = src;
             mainImg.style.opacity = '1';
         }, 150);
-
-        document.querySelectorAll('.img-grid-item').forEach(item => item.classList.remove('active'));
+        document.querySelectorAll('.img-grid-item').forEach(img => img.classList.remove('active'));
         element.classList.add('active');
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
-        const modalEl = document.getElementById('deletePostModal');
-        const idEl = document.getElementById('deletePostId');
-        const titleEl = document.getElementById('deletePostTitle');
-        const confirmBtn = document.getElementById('deleteConfirmBtn');
+    // --- MÃ MỚI CHO NÚT XÓA ---
+    document.addEventListener('click', function(e) {
+        // Kiểm tra xem có bấm đúng vào nút "Gỡ tin đăng" không
+        const deleteBtn = e.target.closest('.btn-open-delete-modal');
+        
+        if (deleteBtn) {
+            e.preventDefault();
+            const form = deleteBtn.closest('form');
+            const title = deleteBtn.getAttribute('data-title') || 'bài đăng này';
 
-        if (!modalEl || !idEl || !titleEl || !confirmBtn) return;
-
-        let targetForm = null;
-
-        document.querySelectorAll('.btn-open-delete-modal').forEach(btn => {
-            btn.addEventListener('click', function () {
-                targetForm = this.closest('form.delete-form');
-
-                idEl.textContent = '#' + (this.dataset.id || '');
-                titleEl.textContent = this.dataset.title || 'Bài đăng';
-
-                const modal = new bootstrap.Modal(modalEl);
-                modal.show();
+            Swal.fire({
+                title: 'Xác nhận gỡ tin?',
+                text: `Bạn có chắc chắn muốn xóa: "${title}"? Hành động này không thể hoàn tác!`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Đồng ý, gỡ tin!',
+                cancelButtonText: 'Hủy bỏ'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Nếu dùng Unpoly (giống trang index)
+                    if (window.up) {
+                        up.submit(form);
+                    } else {
+                        form.submit();
+                    }
+                }
             });
-        });
-
-        confirmBtn.addEventListener('click', function () {
-            if (targetForm) targetForm.submit();
-        });
+        }
     });
 </script>
 @endpush

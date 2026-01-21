@@ -1,325 +1,381 @@
 @extends('admin.layout')
 
 @section('content')
-@php
-    // Tự động nhận diện danh sách bài đăng từ Controller (salePosts hoặc rentPosts)
-    $items = $salePosts ?? $rentPosts ?? collect();
-    $title = (request()->routeIs('*false*')) ? 'Danh sách chờ duyệt' : 'Danh sách đã đăng';
-@endphp
+    @php
+        $title = request()->routeIs('*false*') ? 'Danh sách chờ duyệt' : 'Danh sách đã đăng';
+    @endphp
 
-<style>
-    .price-text-pending { color: #4f46e5; font-weight: 800; font-size: 1.05rem; }
-    .user-avatar { width: 32px; height: 32px; font-size: 11px; font-weight: bold; background-color: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
-    .thumb-wrapper { width: 80px; height: 60px; overflow: hidden; border-radius: 12px; background: #f1f5f9; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; position: relative; }
-    .thumb-img { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; }
-    .thumb-wrapper:hover .thumb-img { transform: scale(1.1); }
-    .badge-type { position: absolute; top: 2px; right: 2px; font-size: 8px; padding: 2px 5px; border-radius: 4px; z-index: 10; }
+    <style>
+        /* Nâng cấp bảng và dòng */
+        .table-hover tbody tr:hover {
+            background-color: #f8fafc;
+        }
 
-    /* ✅ Modal confirm style đồng bộ */
-    .confirm-box {
-        border-radius: 16px;
-        padding: 14px 16px;
-        border: 1px solid rgba(0,0,0,0.06);
-        background: #f8fafc;
-    }
-    .confirm-box.danger {
-        background: #fff5f5;
-        border-color: #ffe0e0;
-    }
-    .confirm-box.success {
-        background: #ecfdf5;
-        border-color: #bbf7d0;
-    }
-</style>
+        .price-text-pending {
+            color: #4f46e5;
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: -0.5px;
+        }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h2 class="fw-800 mb-1 text-dark" style="letter-spacing: -1px;">{{ $title }}</h2>
-        <p class="text-muted small mb-0">
-            <i class="fas fa-filter me-1 text-primary"></i> 
-            Đang xem: <span class="fw-bold text-dark text-uppercase">{{ $type === 'sale' ? 'Bất động sản Bán' : 'Bất động sản Cho Thuê' }}</span>
-        </p>
-    </div>
-    <div class="d-flex gap-2">
-        <div class="btn-group shadow-sm bg-white p-1" style="border-radius: 12px;">
-            <a href="{{ route(Route::currentRouteName(), ['type' => 'sale']) }}" class="btn btn-sm {{ $type == 'sale' ? 'btn-dark' : 'btn-light' }} fw-bold" up-follow up-target=".main-content" style="border-radius: 8px;">Bán</a>
-            <a href="{{ route(Route::currentRouteName(), ['type' => 'rent']) }}" class="btn btn-sm {{ $type == 'rent' ? 'btn-dark' : 'btn-light' }} fw-bold" up-follow up-target=".main-content" style="border-radius: 8px;">Thuê</a>
+        /* Thumbnail phong cách mới */
+        .thumb-wrapper {
+            width: 90px;
+            height: 65px;
+            overflow: hidden;
+            border-radius: 14px;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            position: relative;
+        }
+
+        .thumb-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: 0.4s ease;
+        }
+
+        .badge-type {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-weight: 800;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Thông tin địa chỉ phân cấp */
+        .loc-preview {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        .loc-tag-mini {
+            background: #f1f5f9;
+            color: #64748b;
+            padding: 1px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 600;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* Button Group hiện đại */
+        .action-group {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 2px;
+            display: inline-flex;
+            overflow: hidden;
+        }
+
+        .btn-action-item {
+            border: none;
+            background: transparent;
+            padding: 6px 10px;
+            color: #64748b;
+            transition: 0.2s;
+            border-radius: 8px;
+        }
+
+        .btn-action-item:hover {
+            background: #f1f5f9;
+            color: #4f46e5;
+        }
+
+        .btn-action-item.delete:hover {
+            background: #fef2f2;
+            color: #ef4444;
+        }
+
+        /* Modal Style */
+        .confirm-box {
+            border-radius: 18px;
+            padding: 20px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .confirm-box.success {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+        }
+
+        .confirm-box.danger {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+    </style>
+
+    {{-- PHẦN THÔNG BÁO MỚI THÊM --}}
+    @if (session('success'))
+        <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert"
+            style="border-radius: 16px; background: #ecfdf5; color: #065f46;">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-check-circle me-2"></i>
+                <div><strong>Thành công!</strong> {{ session('success') }}</div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-        <a href="{{ route('create-sale-post-admin') }}" class="btn btn-primary px-4 shadow-sm fw-bold d-flex align-items-center" style="border-radius: 12px;">
-            <i class="fas fa-plus me-2"></i>Tạo mới
-        </a>
-    </div>
-</div>
+    @endif
 
-<div class="card border-0 shadow-sm" style="border-radius: 24px; overflow: hidden;">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light">
-                    <tr>
-                        <th class="ps-4 py-4 text-muted fw-bold" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">Hình ảnh</th>
-                        <th class="py-4 text-muted fw-bold" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">Thông tin chi tiết</th>
-                        <th class="py-4 text-muted fw-bold" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">Giá & Diện tích</th>
-                        <th class="py-4 text-muted fw-bold" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">Người đăng</th>
-                        <th class="py-4 text-muted fw-bold text-center" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($items as $post)
-                    <tr>
-                        <td class="ps-4">
-                            <div class="thumb-wrapper shadow-sm">
-                                <span class="badge badge-type {{ $post->type == 'sale' ? 'bg-primary' : 'bg-info' }}">
-                                    {{ $post->type == 'sale' ? 'Bán' : 'Thuê' }}
-                                </span>
-                                @php 
-                                    $firstImage = $post->images->first()?->image_url;
-                                    $src = $firstImage 
-                                           ? (str_starts_with($firstImage, 'http') ? $firstImage : asset('storage/' . ltrim($firstImage, '/')))
-                                           : 'https://placehold.co/600x400?text=No+Image';
-                                @endphp
-                                <img src="{{ $src }}" class="thumb-img" onerror="this.src='https://placehold.co/600x400?text=Error+Image'">
-                            </div>
-                        </td>
-
-                        <td>
-                            <div class="fw-bold text-dark mb-1">{{ Str::limit($post->title, 50) }}</div>
-                            
-                            {{-- Badge Loại hình lấy trực tiếp từ Database --}}
-                            <div class="mb-2 d-flex gap-1">
-                                @php
-                                    $categoryName = $post->category->name ?? 'Chưa phân loại';
-                                    $badgeClass = match($categoryName) {
-                                        'Căn hộ'  => 'bg-primary-subtle text-primary',
-                                        'Nhà phố' => 'bg-info-subtle text-info',
-                                        'Đất nền' => 'bg-success-subtle text-success',
-                                        default    => 'bg-secondary-subtle text-secondary',
-                                    };
-                                @endphp
-                                <span class="badge {{ $badgeClass }} border-0 fw-bold" style="font-size: 0.6rem; padding: 3px 8px;">
-                                    <i class="fas fa-tag me-1"></i>{{ $categoryName }}
-                                </span>
-                            </div>
-
-                            <small class="text-muted d-flex align-items-center">
-                                <i class="fas fa-map-marker-alt me-1 text-danger"></i>
-                                {{ Str::limit($post->address, 40) }}
-                            </small>
-                        </td>
-
-                        <td>
-                            <div class="price-text-pending">
-                                @if($post->type == 'sale')
-                                    {{ $post->price >= 1000000000 ? number_format($post->price/1000000000, 2).' tỷ' : number_format($post->price/1000000).' triệu' }}
-                                @else
-                                    {{ number_format($post->price/1000000, 1) }} tr/tháng
-                                @endif
-                            </div>
-                            <div class="badge bg-light text-muted fw-bold border-0 mt-1" style="font-size: 0.65rem;">
-                                {{ $post->area }} m²
-                            </div>
-                        </td>
-
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center me-2">
-                                    {{ strtoupper(substr($post->user->name ?? 'A', 0, 1)) }}
-                                </div>
-                                <div>
-                                    <div class="small fw-bold text-dark">{{ $post->user->name ?? 'Admin' }}</div>
-                                    <div class="text-muted" style="font-size: 10px;">{{ $post->created_at->diffForHumans() }}</div>
-                                </div>
-                            </div>
-                        </td>
-
-                        <td class="pe-4 text-center">
-                            <div class="d-flex justify-content-center gap-2">
-                                @if($post->status == 0)
-                                    {{-- ✅ DUYỆT: bỏ confirm() -> dùng modal --}}
-                                    <form action="{{ route('approve-sale-post-admin', $post->id) }}"
-                                          method="POST"
-                                          class="m-0 approve-form"
-                                          up-submit up-target=".main-content, #admin-sidebar-nav">
-                                        @csrf @method('PATCH')
-
-                                        <button type="button"
-                                                class="btn btn-sm btn-success px-3 fw-800 shadow-sm btn-open-approve-modal"
-                                                style="border-radius: 8px;"
-                                                data-title="{{ e($post->title) }}"
-                                                data-type="{{ $post->type == 'sale' ? 'Bán' : 'Thuê' }}">
-                                            <i class="fas fa-check-circle me-1"></i> DUYỆT
-                                        </button>
-                                    </form>
-                                @endif
-
-                                <div class="btn-group shadow-sm border rounded-3 overflow-hidden">
-                                    <a href="{{ route('show-sale-post-admin', $post->id) }}" class="btn btn-sm btn-white bg-white" up-follow up-target=".main-content">
-                                        <i class="fas fa-eye text-primary"></i>
-                                    </a>
-                                    <a href="{{ route('edit-sale-post-admin', $post->id) }}" class="btn btn-sm btn-white bg-white" up-follow up-target=".main-content">
-                                        <i class="fas fa-pen-nib text-warning"></i>
-                                    </a>
-
-                                    {{-- ✅ XÓA: bỏ confirm() -> dùng modal --}}
-                                    <form action="{{ route('destroy-sale-post-admin', $post->id) }}"
-                                          method="POST"
-                                          class="m-0 delete-form"
-                                          up-submit up-target=".main-content, #admin-sidebar-nav">
-                                        @csrf @method('DELETE')
-                                        <button type="button"
-                                                class="btn btn-sm btn-white bg-white btn-open-delete-modal"
-                                                data-title="{{ e($post->title) }}"
-                                                data-type="{{ $post->type == 'sale' ? 'Bán' : 'Thuê' }}">
-                                            <i class="fas fa-trash-alt text-danger"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="5" class="text-center py-5">
-                            <i class="fas fa-inbox fa-3x text-light mb-3"></i>
-                            <h5 class="text-muted fw-bold">Trống trải quá...</h5>
-                            <p class="text-muted small">Không tìm thấy bài đăng nào trong mục này.</p>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+            <h2 class="fw-900 mb-1 text-dark" style="letter-spacing: -1.5px;">{{ $title }}</h2>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-primary-subtle text-primary px-3 py-1 rounded-pill fw-bold"
+                    style="font-size: 0.7rem;">
+                    <i class="fas fa-layer-group me-1"></i>
+                    {{ $type === 'sale' ? 'BẤT ĐỘNG SẢN BÁN' : 'BẤT ĐỘNG SẢN CHO THUÊ' }}
+                </span>
+                <span class="text-muted small">
+                    <i class="fas fa-clock text-warning me-1"></i>
+                    Có <strong>{{ method_exists($items, 'total') ? $items->total() : $items->count() }}</strong> bài đang
+                    chờ
+                </span>
+            </div>
+        </div>
+        <div class="d-flex gap-3">
+            <div class="btn-group p-1 bg-white border shadow-sm" style="border-radius: 14px;">
+                <a href="{{ route(Route::currentRouteName(), ['type' => 'sale']) }}"
+                    class="btn btn-sm {{ $type == 'sale' ? 'btn-dark' : 'btn-light border-0' }} fw-bold px-3"
+                    style="border-radius: 10px;" up-follow up-target=".main-content">Bán</a>
+                <a href="{{ route(Route::currentRouteName(), ['type' => 'rent']) }}"
+                    class="btn btn-sm {{ $type == 'rent' ? 'btn-dark' : 'btn-light border-0' }} fw-bold px-3"
+                    style="border-radius: 10px;" up-follow up-target=".main-content">Thuê</a>
+            </div>
+            <a href="{{ route('create-sale-post-admin') }}"
+                class="btn btn-primary px-4 shadow-sm fw-800 d-flex align-items-center"
+                style="border-radius: 14px; background: #4f46e5; border: none;">
+                <i class="fas fa-plus-circle me-2"></i>Tạo mới
+            </a>
         </div>
     </div>
-</div>
 
-<div class="mt-4 d-flex justify-content-center" up-nav>
-    {{ $items->appends(request()->query())->links('pagination::bootstrap-5') }}
-</div>
-
-{{-- ✅ MODAL: XÁC NHẬN DUYỆT --}}
-<div class="modal fade" id="approvePostModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
-      <div class="modal-header border-0 px-4 pt-4">
-        <h5 class="modal-title fw-800">
-          <i class="fas fa-check-circle me-2 text-success"></i>Xác nhận phê duyệt
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-
-      <div class="modal-body px-4">
-        <div class="confirm-box success">
-          <div class="fw-800 text-success mb-1">Duyệt tin đăng này?</div>
-          <div class="small text-muted">
-            <div class="mb-1">Loại: <span class="badge bg-dark" id="approveTypeBadge"></span></div>
-            <div>Tiêu đề: <b id="approvePostTitle"></b></div>
-          </div>
+    <div class="card border-0 shadow-sm" style="border-radius: 28px; overflow: hidden; background: white;">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr class="bg-light-subtle">
+                            <th class="ps-4 py-4 text-muted fw-800"
+                                style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; width: 120px;">
+                                Hình ảnh</th>
+                            <th class="py-4 text-muted fw-800"
+                                style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px;">Thông tin nội
+                                dung</th>
+                            <th class="py-4 text-muted fw-800"
+                                style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px;">Giá trị & Diện
+                                tích</th>
+                            <th class="py-4 text-muted fw-800"
+                                style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px;">Đối tác</th>
+                            <th class="py-4 text-muted fw-800 text-center"
+                                style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px;">Quản lý</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($items as $post)
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="thumb-wrapper">
+                                        <span
+                                            class="badge badge-type {{ $post->type == 'sale' ? 'bg-primary' : 'bg-info' }}">
+                                            {{ $post->type == 'sale' ? 'Bán' : 'Thuê' }}
+                                        </span>
+                                        @php
+                                            $firstImage = $post->images->first()?->image_url;
+                                            $src = $firstImage
+                                                ? (str_starts_with($firstImage, 'http')
+                                                    ? $firstImage
+                                                    : asset('storage/' . ltrim($firstImage, '/')))
+                                                : 'https://placehold.co/600x400?text=No+Image';
+                                        @endphp
+                                        <img src="{{ $src }}" class="thumb-img" loading="lazy">
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-800 text-dark mb-1" style="font-size: 0.95rem;">
+                                        {{ Str::limit($post->title, 55) }}</div>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="badge bg-light text-dark border-0 fw-bold"
+                                            style="font-size: 0.6rem; padding: 4px 8px;">
+                                            <i
+                                                class="fas fa-tag me-1 text-primary"></i>{{ $post->category->name ?? 'Loại khác' }}
+                                        </span>
+                                        <div class="loc-preview">
+                                            <span class="loc-tag-mini">{{ $post->province?->name }}</span>
+                                            <i class="fas fa-chevron-right text-muted" style="font-size: 8px;"></i>
+                                            <span class="loc-tag-mini">{{ $post->district?->name }}</span>
+                                            {{-- Thêm phần Phường/Xã ở đây --}}
+                                            @if ($post->ward)
+                                                <i class="fas fa-chevron-right text-muted" style="font-size: 8px;"></i>
+                                                <span class="loc-tag-mini">{{ $post->ward->name }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <small class="text-muted small"><i
+                                            class="fas fa-map-marker-alt me-1 text-danger"></i>{{ Str::limit($post->address, 45) }}</small>
+                                </td>
+                                <td>
+                                    <div class="price-text-pending">
+                                        @if ($post->type == 'sale')
+                                            {{ $post->price >= 1000000000 ? number_format($post->price / 1000000000, 2) . ' tỷ' : number_format($post->price / 1000000) . ' triệu' }}
+                                        @else
+                                            {{ number_format($post->price / 1000000, 1) }} tr/tháng
+                                        @endif
+                                    </div>
+                                    <div class="text-muted fw-bold mt-1" style="font-size: 0.75rem;">
+                                        <i class="fas fa-ruler-combined me-1"></i>{{ $post->area }} m²
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="user-avatar rounded-circle d-flex align-items-center justify-content-center me-2 shadow-sm"
+                                            style="width: 38px; height: 38px; background: #eef2ff; color: #4f46e5; border: 2px solid white;">
+                                            {{ strtoupper(substr($post->user->name ?? 'A', 0, 1)) }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark" style="font-size: 0.85rem;">
+                                                {{ $post->user->name ?? 'Admin' }}</div>
+                                            <div class="text-muted" style="font-size: 11px;">
+                                                {{ $post->created_at->diffForHumans() }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="pe-4 text-center">
+                                    <div class="d-flex justify-content-center align-items-center gap-3">
+                                        @if ($post->status == 0)
+                                            <form action="{{ route('approve-sale-post-admin', $post->id) }}" method="POST"
+                                                class="m-0 approve-form" up-submit up-target=".main-content">
+                                                @csrf @method('PATCH')
+                                                <button type="submit" class="btn btn-sm btn-success px-3 fw-900 shadow-sm"
+                                                    style="border-radius: 10px;">
+                                                    DUYỆT
+                                                </button>
+                                            </form>
+                                        @endif
+                                        <div class="action-group shadow-sm">
+                                            <a href="{{ route('show-sale-post-admin', $post->id) }}"
+                                                class="btn-action-item" title="Xem chi tiết" up-follow><i
+                                                    class="fas fa-eye"></i></a>
+                                            <a href="{{ route('edit-sale-post-admin', $post->id) }}"
+                                                class="btn-action-item" title="Chỉnh sửa" up-follow><i
+                                                    class="fas fa-pen"></i></a>
+                                            <form action="{{ route('destroy-sale-post-admin', $post->id) }}"
+                                                method="POST" class="m-0 delete-form" up-submit
+                                                up-target=".main-content">
+                                                @csrf @method('DELETE')
+                                                <button type="button"
+                                                    class="btn-action-item delete btn-open-delete-modal"
+                                                    data-title="{{ e($post->title) }}"
+                                                    data-type="{{ $post->type == 'sale' ? 'Bán' : 'Thuê' }}">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="text-center py-5">
+                                    <div class="opacity-25 mb-3"><i class="fas fa-folder-open fa-4x text-muted"></i></div>
+                                    <h5 class="text-muted fw-800">Mọi thứ đã được xử lý xong!</h5>
+                                    <p class="text-muted small">Hiện tại không có tin nào đang chờ phê duyệt.</p>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
-        <div class="small text-muted mt-3">
-          Sau khi duyệt, bài đăng sẽ được hiển thị công khai.
-        </div>
-      </div>
-
-      <div class="modal-footer border-0 px-4 pb-4">
-        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
-        <button type="button" class="btn btn-success rounded-pill px-4 fw-800" id="approveConfirmBtn">
-          Xác nhận duyệt
-        </button>
-      </div>
     </div>
-  </div>
-</div>
 
-{{-- ✅ MODAL: XÁC NHẬN XÓA --}}
-<div class="modal fade" id="deletePostModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
-      <div class="modal-header border-0 px-4 pt-4">
-        <h5 class="modal-title fw-800">
-          <i class="fas fa-trash-alt me-2 text-danger"></i>Xác nhận xóa
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-
-      <div class="modal-body px-4">
-        <div class="confirm-box danger">
-          <div class="fw-800 text-danger mb-1">Xóa vĩnh viễn tin đăng?</div>
-          <div class="small text-muted">
-            <div class="mb-1">Loại: <span class="badge bg-dark" id="deleteTypeBadge"></span></div>
-            <div>Tiêu đề: <b id="deletePostTitle"></b></div>
-          </div>
+    @if (method_exists($items, 'links'))
+        <div class="mt-4" up-nav>
+            {{ $items->appends(request()->query())->links('pagination::bootstrap-5') }}
         </div>
-        <div class="small text-muted mt-3">
-          Hành động này không thể hoàn tác. Ảnh và dữ liệu liên quan có thể bị mất.
-        </div>
-      </div>
+    @endif
 
-      <div class="modal-footer border-0 px-4 pb-4">
-        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
-        <button type="button" class="btn btn-danger rounded-pill px-4 fw-800" id="deleteConfirmBtn">
-          Xóa ngay
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
+    {{-- PHẦN SCRIPT: GIỮ NGUYÊN VÀ THÊM SWEETALERT --}}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. Toast thông báo thành công
+            @if (session('success'))
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Thành công!',
+                    text: "{{ session('success') }}",
+                    timer: 3000,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end'
+                });
+            @endif
 
-{{-- Bootstrap bundle (nếu admin.layout đã có thì xoá dòng này để tránh trùng) --}}
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+            // 2. Xử lý nút XÓA (Sửa lỗi không xóa ở đây)
+            document.addEventListener('click', function(e) {
+                const deleteBtn = e.target.closest('.btn-open-delete-modal');
+                if (deleteBtn) {
+                    e.preventDefault();
+                    const form = deleteBtn.closest('form');
+                    const title = deleteBtn.getAttribute('data-title');
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    // ===== Approve =====
-    const approveModalEl = document.getElementById('approvePostModal');
-    const approveTitleEl = document.getElementById('approvePostTitle');
-    const approveTypeEl  = document.getElementById('approveTypeBadge');
-    const approveConfirmBtn = document.getElementById('approveConfirmBtn');
-    let approveTargetForm = null;
+                    Swal.fire({
+                        title: 'Xác nhận xóa?',
+                        text: `Bạn có chắc muốn xóa bài: "${title}"?`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#ef4444',
+                        cancelButtonColor: '#64748b',
+                        confirmButtonText: 'Đồng ý xóa',
+                        cancelButtonText: 'Hủy'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // QUAN TRỌNG: Dùng up.submit để Unpoly thực hiện gửi dữ liệu
+                            if (window.up) {
+                                up.submit(form);
+                            } else {
+                                form.submit();
+                            }
+                        }
+                    });
+                }
+            });
 
-    document.querySelectorAll('.btn-open-approve-modal').forEach(btn => {
-        btn.addEventListener('click', function () {
-            approveTargetForm = this.closest('form.approve-form');
-
-            const title = this.dataset.title || 'Tin đăng';
-            const type  = this.dataset.type || '';
-
-            approveTitleEl.textContent = title;
-            approveTypeEl.textContent  = type;
-
-            const modal = new bootstrap.Modal(approveModalEl);
-            modal.show();
+            // 3. Xử lý nút DUYỆT (Dùng chung style cho đẹp)
+            document.addEventListener('submit', function(e) {
+                if (e.target.classList.contains('approve-form')) {
+                    // Nếu form này chưa được xác nhận thì dừng lại để hiện Modal
+                    if (!e.target.dataset.confirmed) {
+                        e.preventDefault();
+                        Swal.fire({
+                            title: 'Duyệt bài này?',
+                            text: "Bài viết sẽ được đăng công khai.",
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonColor: '#10b981',
+                            confirmButtonText: 'Duyệt ngay'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                e.target.dataset.confirmed = "true";
+                                if (window.up) {
+                                    up.submit(e.target);
+                                } else {
+                                    e.target.submit();
+                                }
+                            }
+                        });
+                    }
+                }
+            });
         });
-    });
-
-    approveConfirmBtn.addEventListener('click', function () {
-        if (approveTargetForm) approveTargetForm.submit();
-    });
-
-    // ===== Delete =====
-    const deleteModalEl = document.getElementById('deletePostModal');
-    const deleteTitleEl = document.getElementById('deletePostTitle');
-    const deleteTypeEl  = document.getElementById('deleteTypeBadge');
-    const deleteConfirmBtn = document.getElementById('deleteConfirmBtn');
-    let deleteTargetForm = null;
-
-    document.querySelectorAll('.btn-open-delete-modal').forEach(btn => {
-        btn.addEventListener('click', function () {
-            deleteTargetForm = this.closest('form.delete-form');
-
-            const title = this.dataset.title || 'Tin đăng';
-            const type  = this.dataset.type || '';
-
-            deleteTitleEl.textContent = title;
-            deleteTypeEl.textContent  = type;
-
-            const modal = new bootstrap.Modal(deleteModalEl);
-            modal.show();
-        });
-    });
-
-    deleteConfirmBtn.addEventListener('click', function () {
-        if (deleteTargetForm) deleteTargetForm.submit();
-    });
-});
-</script>
+    </script>
 @endsection

@@ -4,82 +4,79 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\SalePost;
-use App\Models\SalePostImage;
 use App\Models\User;
-use App\Models\Category; // QUAN TRỌNG: Import Category
+use App\Models\Category;
+use App\Models\Province;
+use App\Models\District;
+use App\Models\Ward;
 
 class SalePostSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Đảm bảo có ít nhất 1 user
-        $user = User::first() ?: User::factory()->create();
-
-        // 2. Lấy danh sách ID của các Category hiện có (Căn hộ, Nhà phố, Đất...)
-        // Nếu database chưa có category nào, hãy tạo mẫu 1 cái để tránh lỗi
+        // 1. Lấy danh sách ID cơ bản
+        $userIds = User::pluck('id')->toArray();
         $categoryIds = Category::pluck('id')->toArray();
-        if (empty($categoryIds)) {
-            $categoryIds[] = Category::create(['name' => 'Chung cư', 'slug' => 'chung-cu'])->id;
+
+        // Kiểm tra xem đã có dữ liệu Ward chưa
+        if (Ward::count() === 0) {
+            $this->command->error("Bảng wards đang trống! Hãy chạy WardSeeder trước khi chạy SalePostSeeder.");
+            return;
         }
 
-        // Kho ảnh Bất động sản
-        $realEstateImages = [
-            'https://images.pexels.com/photos/106399/pexels-photo-106399.jpeg',
-            'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg',
-            'https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg',
-            'https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg',
-            'https://images.pexels.com/photos/259588/pexels-photo-259588.jpeg',
-            'https://images.pexels.com/photos/2102587/pexels-photo-2102587.jpeg',
-            'https://images.pexels.com/photos/1571460/pexels-photo-1571460.jpeg',
-            'https://images.pexels.com/photos/276724/pexels-photo-276724.jpeg',
-            'https://images.pexels.com/photos/1643384/pexels-photo-1643384.jpeg',
-            'https://images.pexels.com/photos/2724749/pexels-photo-2724749.jpeg',
+        // 2. Định nghĩa các mẫu tiêu đề và mô tả (Kịch bản)
+        $scenarios = [
+            [
+                'title' => 'Bán gấp nhà phố, hẻm xe hơi, sổ hồng riêng',
+                'desc' => 'Cần tiền kinh doanh bán gấp nhà phố. Diện tích rộng, 1 trệt 2 lầu, 3 phòng ngủ. Khu dân cư an ninh, gần chợ và trường học.',
+                'price_range' => [3000000000, 10000000000], // 3 tỷ - 10 tỷ
+                'area_range' => [40, 80]
+            ],
+            [
+                'title' => 'Căn hộ chung cư cao cấp view cực đẹp',
+                'desc' => 'Chính chủ nhượng lại căn hộ 2 phòng ngủ. Nội thất đầy đủ, cao cấp, chỉ việc xách vali vào ở. Tiện ích: hồ bơi, gym, công viên.',
+                'price_range' => [2000000000, 5000000000], // 2 tỷ - 5 tỷ
+                'area_range' => [50, 100]
+            ],
+            [
+                'title' => 'Lô đất nền tiềm năng, thích hợp đầu tư sinh lời',
+                'desc' => 'Đất nền phân lô, thổ cư 100%. Đường nhựa rộng, gần khu công nghiệp lớn. Pháp lý rõ ràng, sang tên trong ngày.',
+                'price_range' => [1000000000, 3000000000], // 1 tỷ - 3 tỷ
+                'area_range' => [80, 150]
+            ]
         ];
 
-        $titles = [
-            'Căn hộ Studio Vinhomes Smart City',
-            'Nhà phố liền kề KĐT Sala',
-            'Penthouse Sky Villa View Sông',
-            'Biệt thự tân cổ điển Pháp',
-            'Chung cư cao cấp Masteri Thảo Điền',
-            'Căn hộ Officetel Quận 1',
-            'Nhà vườn sinh thái ngoại ô',
-            'Shophouse mặt tiền đường lớn',
-            'Duplex thông tầng Gem Sky',
-            'Nhà phố thương mại Sun Grand'
-        ];
+        $totalRecords = 100; // SỐ LƯỢNG BÀI ĐĂNG BẠN MUỐN TẠO
+        $this->command->info("Đang tạo $totalRecords bài đăng bất động sản...");
 
-        foreach ($titles as $title) {
-            $type = rand(0, 1) ? 'sale' : 'rent';
+        for ($i = 0; $i < $totalRecords; $i++) {
+            // CÁCH FIX LỖI: Bốc ngẫu nhiên 1 Phường trước, sau đó truy ngược ra Quận và Tỉnh
+            // Việc này đảm bảo 100% bài đăng luôn có đầy đủ 3 cấp địa giới hành chính.
+            $ward = Ward::inRandomOrder()->first();
+            $district = District::find($ward->district_id);
+            $province = Province::find($district->province_id);
 
-            // Điều chỉnh giá: Sale (tỷ đồng), Rent (triệu đồng)
-            $price = ($type === 'sale')
-                ? rand(2, 50) * 1000000000
-                : rand(5, 50) * 1000000;
+            // Chọn ngẫu nhiên 1 kịch bản nội dung
+            $scene = $scenarios[array_rand($scenarios)];
 
-            $post = SalePost::create([
-                'user_id'      => $user->id,
-                'category_id'  => $categoryIds[array_rand($categoryIds)], // MỚI: Gắn ID danh mục ngẫu nhiên
-                'type'         => $type,
-                'title'        => ($type === 'sale' ? '[BÁN] ' : '[THUÊ] ') . $title,
-                'description'  => 'Mô tả chi tiết cho ' . $title . '. Vị trí đắc địa, pháp lý đầy đủ. Nội thất cao cấp nhập khẩu.',
-                'price'        => $price,
-                'area'         => rand(40, 500),
-                'address'      => 'Số ' . rand(1, 200) . ' Đường ABC, Quận ' . rand(1, 12) . ', TP. Hồ Chí Minh',
-                'bedrooms'     => rand(1, 5),
-                'bathrooms'    => rand(1, 3),
-                'is_furnished' => (bool)rand(0, 1),
-                'status'       => rand(0, 1), // Trạng thái: 0 hoặc 1
+            SalePost::create([
+                'user_id'     => $userIds[array_rand($userIds)],
+                'category_id' => $categoryIds[array_rand($categoryIds)],
+                'province_id' => $province->id,
+                'district_id' => $district->id,
+                'ward_id'     => $ward->id,
+                'title'       => $scene['title'] . " tại " . $district->name . " (#" . ($i + 1) . ")",
+                'description' => $scene['desc'] . " Địa chỉ cụ thể tại " . $ward->name . ", " . $district->name . ".",
+                'price'       => rand($scene['price_range'][0], $scene['price_range'][1]),
+                'area'        => rand($scene['area_range'][0], $scene['area_range'][1]),
+                'status'      => 1,
+                'address'     => "Số " . rand(1, 200) . " đường chính, " . $ward->name,
+                'created_at'  => now()->subDays(rand(0, 30)), // Ngày đăng ngẫu nhiên trong tháng qua
+
+                'type'        => array_rand(['sale' => 'sale', 'rent' => 'rent']),
             ]);
-
-            // Gắn 3-5 ảnh mẫu ngẫu nhiên cho mỗi bài viết
-            $selectedImages = collect($realEstateImages)->random(rand(3, 5));
-            foreach ($selectedImages as $url) {
-                SalePostImage::create([
-                    'sale_post_id' => $post->id,
-                    'image_url'    => $url
-                ]);
-            }
         }
+
+        $this->command->info("Đã tạo thành công dữ liệu giả!");
     }
 }

@@ -7,48 +7,49 @@ use Illuminate\Foundation\Http\FormRequest;
 class StoreSalePostRequest extends FormRequest
 {
     /**
-     * Determine if the user is authorized to make this request.
+     * Xác thực người dùng có quyền thực hiện request này hay không.
      */
+    
+
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     */
     public function rules(): array
     {
         return [
-            'type'         => 'required|in:sale,rent',
-            'category_id'  => 'required|exists:categories,id', // Đã đổi tên và kiểu kiểm tra
-            'title'        => 'required|string|max:200',
-            'description'  => 'required|string',
+            'title'        => 'required|string|max:255',
+            'type'         => 'required|in:sale,rent', // Chỉ chấp nhận 2 giá trị này
+            'category_id'  => 'required|integer',
+            'province_id'  => 'required|integer',
+            'district_id'  => 'required|integer',
+            'ward_id'      => 'required|integer',
             'price'        => 'required|numeric|min:0',
             'area'         => 'required|numeric|min:0',
-            'address'      => 'required|string|max:255',
-            'bedrooms'     => 'nullable|numeric|min:0',
-            'bathrooms'    => 'nullable|numeric|min:0',
-            'is_furnished' => 'nullable|boolean',
-            'images'       => 'required|array|min:1', // Bắt buộc phải có ít nhất 1 ảnh
-            'images.*'     => 'image|mimes:jpg,jpeg,png,webp|max:5120',
+            'address'      => 'required|string',
+            'description'  => 'required|string',
+            'images'       => 'required|array|min:1', // Bắt buộc là mảng và có ít nhất 1 ảnh
+            'images.*'     => 'image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+            'bedrooms'     => 'nullable|integer',
+            'bathrooms'    => 'nullable|integer',
+            'is_furnished' => 'nullable',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'type.required'        => 'Vui lòng chọn hình thức giao dịch (Bán hoặc Cho thuê).',
-            'category_id.required' => 'Vui lòng chọn loại hình bất động sản.',
-            'category_id.exists'   => 'Danh mục đã chọn không tồn tại.',
-            'title.required'       => 'Tiêu đề không được để trống.',
-            'price.required'       => 'Giá không được để trống.',
-            'area.required'        => 'Diện tích không được để trống.',
-            'address.required'     => 'Địa chỉ không được để trống.',
-            'description.required' => 'Mô tả chi tiết không được để trống.',
-            'images.required'      => 'Bạn phải tải lên ít nhất một hình ảnh thực tế.',
-            'images.*.image'       => 'Tệp tải lên phải là hình ảnh.',
-            'images.*.max'         => 'Dung lượng mỗi ảnh không được quá 5MB.',
+            'title.required'       => 'Vui lòng nhập tiêu đề bài đăng.',
+            'images.required'      => 'Bạn phải tải lên ít nhất một hình ảnh.',
+            'images.array'         => 'Định dạng hình ảnh không hợp lệ.',
+            'description.required' => 'Vui lòng nhập mô tả chi tiết.',
+            'price.required'       => 'Vui lòng nhập giá.',
+            'price.numeric'        => 'Giá phải là chữ số.',
+            'area.required'        => 'Vui lòng nhập diện tích.',
+            'province_id.required' => 'Vui lòng chọn Tỉnh/Thành phố.',
+            'district_id.required' => 'Vui lòng chọn Quận/Huyện.',
+            'ward_id.required'     => 'Vui lòng chọn Phường/Xã.',
         ];
     }
 }

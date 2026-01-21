@@ -22,7 +22,9 @@
 @endif
 
 <div class="card card-form bg-white p-4">
-    <form action="{{ route('store-news-admin') }}" method="POST" enctype="multipart/form-data">
+    {{-- Đã thêm up-submit và up-target vào form bên dưới --}}
+    <form action="{{ route('store-news-admin') }}" method="POST" enctype="multipart/form-data" 
+          up-submit up-target=".main-content">
         @csrf
         <div class="row">
             <div class="col-md-8">

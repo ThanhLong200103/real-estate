@@ -354,6 +354,18 @@
 
                         <h1 class="fw-800 h2 mb-3">{{ $salePost->title }}</h1>
 
+                        <div class="d-flex gap-2 mb-3 flex-wrap">
+                            <span class="badge bg-light text-dark border">
+                                {{ $salePost->province?->name ?? 'N/A' }}
+                            </span>
+                            <span class="badge bg-light text-dark border">
+                                {{ $salePost->district?->name ?? 'N/A' }}
+                            </span>
+                            <span class="badge bg-light text-dark border">
+                                {{ $salePost->ward?->name ?? 'N/A' }}
+                            </span>
+                        </div>
+
                         <div class="d-flex flex-wrap gap-3 mb-4">
                             <span class="text-muted small">
                                 <i class="fas fa-layer-group me-1 text-primary"></i>
@@ -429,8 +441,13 @@
                     <h5 class="fw-800 mb-4"><i class="fas fa-map-marked-alt text-primary me-2"></i>Vị trí bản đồ</h5>
                     <div id="map" style="width: 100%; height: 400px; border-radius: 20px; z-index: 1;"></div>
                     <div class="mt-3 p-3 bg-light rounded-4">
-                        <p class="text-muted small m-0"><i class="fas fa-info-circle me-1"></i> Vị trí được xác định
-                            tự động theo địa chỉ: <strong>{{ $salePost->address }}</strong></p>
+                        <p class="text-muted small">
+                            <i class="fas fa-map-marker-alt text-primary me-2"></i>
+                            {{ $salePost->address }},
+                            {{ $salePost->ward?->name ?? 'Phường/Xã chưa cập nhật' }},
+                            {{ $salePost->district?->name ?? 'Quận/Huyện chưa cập nhật' }},
+                            {{ $salePost->province?->name ?? 'Tỉnh/TP chưa cập nhật' }}
+                        </p>
                     </div>
                 </div>
 
@@ -749,24 +766,27 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const address = "{{ $salePost->address }}";
+            // 1. Tạo chuỗi địa chỉ đầy đủ để tìm trên bản đồ chính xác hơn
+            // Kết hợp: Địa chỉ chi tiết + Huyện + Tỉnh
+            const fullAddress =
+                "{{ $salePost->address }}, {{ $salePost->district->name ?? '' }}, {{ $salePost->province->name ?? '' }}";
             const title = "{{ $salePost->title }}";
 
-            // Mặc định trung tâm TP.HCM
+            // Mặc định trung tâm Việt Nam hoặc khu vực chính
             const map = L.map('map').setView([10.762622, 106.660172], 13);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© EstateHub | OpenStreetMap'
             }).addTo(map);
 
-            // Geocoding qua Nominatim
-            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
+            // 2. Geocoding qua Nominatim với fullAddress (đã mã hóa URL)
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fullAddress)}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.length > 0) {
                         const lat = data[0].lat;
                         const lon = data[0].lon;
-                        map.setView([lat, lon], 16);
+                        map.setView([lat, lon], 16); // Phóng to hơn khi tìm thấy địa chỉ cụ thể
 
                         const icon = L.divIcon({
                             className: 'custom-purple-marker',
@@ -779,12 +799,14 @@
                                 icon: icon
                             }).addTo(map)
                             .bindPopup(
-                                `<div class="p-1"><b style="color:#6c5ce7">${title}</b><br><small class="text-muted">${address}</small></div>`
-                                )
+                                `<div class="p-1"><b style="color:#6c5ce7">${title}</b><br><small class="text-muted">${fullAddress}</small></div>`
+                            )
                             .openPopup();
+                    } else {
+                        console.warn("Không tìm thấy vị trí cụ thể cho địa chỉ này.");
                     }
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => console.error('Lỗi bản đồ:', error));
 
             /* ✅ CLICK SỐ ĐIỆN THOẠI -> HIỆN MODAL BẢO TRÌ */
             const phoneBtn = document.querySelector('.phone-maintenance');

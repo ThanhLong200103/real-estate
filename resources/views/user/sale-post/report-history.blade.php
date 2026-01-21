@@ -102,17 +102,9 @@
         }
 
         /* Trạng thái */
-        .status-pending {
-            border-left-color: var(--warning);
-        }
-
-        .status-resolved {
-            border-left-color: var(--success);
-        }
-
-        .status-rejected {
-            border-left-color: var(--danger);
-        }
+        .status-pending { border-left-color: var(--warning); }
+        .status-resolved { border-left-color: var(--success); }
+        .status-rejected { border-left-color: var(--danger); }
 
         .badge-status {
             padding: 8px 16px;
@@ -123,20 +115,9 @@
             letter-spacing: 0.5px;
         }
 
-        .bg-pending {
-            background: #fff9f0;
-            color: var(--warning);
-        }
-
-        .bg-resolved {
-            background: #e6fffb;
-            color: var(--success);
-        }
-
-        .bg-rejected {
-            background: #fff1f2;
-            color: var(--danger);
-        }
+        .bg-pending { background: #fff9f0; color: var(--warning); }
+        .bg-resolved { background: #e6fffb; color: var(--success); }
+        .bg-rejected { background: #fff1f2; color: var(--danger); }
 
         .admin-note {
             background: #f8f9fd;
@@ -167,6 +148,16 @@
             padding: 60px;
             text-align: center;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+        }
+
+        /* Thêm style cho phần snapshot bài đăng */
+        .post-preview-mini {
+            background: #f8faff;
+            border: 1px solid #edf2f7;
+            transition: 0.2s;
+        }
+        .post-preview-mini:hover {
+            background: #f1f5f9;
         }
     </style>
 </head>
@@ -220,36 +211,61 @@
                             $badgeClass = 'bg-rejected';
                             $statusText = 'Đã từ chối';
                         }
+                        
+                        // Kiểm tra tin đăng tồn tại
+                        $postExists = $report->salePost && $report->salePost->status == 1;
                     @endphp
 
                     <div class="report-item {{ $statusClass }}">
+                        {{-- Phần Snapshot: Hiển thị tóm tắt tin đăng để user luôn biết họ báo cáo bài nào --}}
+                        <div class="post-preview-mini p-2 px-3 mb-3 rounded-3 d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-bullhorn text-muted me-2"></i>
+                                <span class="small fw-600 text-muted">Báo cáo bài đăng: </span>
+                                <span class="small ms-1 fw-bold text-dark">{{ $report->salePost->title ?? 'Tin đăng #'.$report->sale_post_id }}</span>
+                            </div>
+                            @if(!$postExists)
+                                <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 fw-800" style="font-size: 9px;">
+                                    NỘI DUNG ĐÃ GỠ
+                                </span>
+                            @endif
+                        </div>
+
                         <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
                             <div>
-                                <span
-                                    class="badge-status {{ $badgeClass }} mb-3 d-inline-block">{{ $statusText }}</span>
+                                <span class="badge-status {{ $badgeClass }} mb-3 d-inline-block">{{ $statusText }}</span>
                                 <h4 class="fw-800 mb-2">Lý do: {{ $report->reason }}</h4>
                                 <div class="text-muted small fw-600">
                                     <i class="far fa-calendar-alt me-1"></i> Ngày gửi:
                                     {{ $report->created_at->format('d/m/Y H:i') }}
                                 </div>
                             </div>
-                            <a href="{{ route('create-sale-show', $report->sale_post_id) }}"
-                                class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold">
-                                Xem tin gốc <i class="fas fa-external-link-alt ms-1"></i>
-                            </a>
+                            
+                            {{-- Nút Thao tác: Kiểm tra tin gốc còn hay mất --}}
+                            <div class="d-flex gap-2">
+                                @if($postExists)
+                                    <a href="{{ route('create-sale-show', $report->sale_post_id) }}"
+                                        class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold">
+                                        Xem tin gốc <i class="fas fa-external-link-alt ms-1"></i>
+                                    </a>
+                                @else
+                                    <button class="btn btn-sm rounded-pill px-3 fw-bold btn-light border text-muted" disabled title="Tin này không còn tồn tại hoặc đã bị khóa">
+                                        <i class="fas fa-eye-slash me-1"></i> Không khả dụng
+                                    </button>
+                                @endif
+                            </div>
                         </div>
 
                         <div class="report-content">
-                            <label class="search-label mb-2">Chi tiết báo cáo</label>
-                            <p class="text-dark fw-500 lead-sm">{{ $report->content ?? 'Không có mô tả chi tiết.' }}
-                            </p>
+                            <label class="search-label mb-2" style="font-size: 12px; font-weight: 800; color: #adb5bd; text-transform: uppercase;">Chi tiết báo cáo</label>
+                            <p class="text-dark fw-500 lead-sm">{{ $report->content ?? 'Không có mô tả chi tiết.' }}</p>
                         </div>
 
                         @if ($report->admin_note)
                             <div class="admin-note">
                                 <div class="d-flex align-items-center mb-2">
                                     <i class="fas fa-reply-all text-primary me-2"></i>
-                                    <span class="search-label m-0 text-primary">Phản hồi từ Ban quản trị</span>
+                                    <span class="search-label m-0 text-primary" style="font-size: 12px; font-weight: 800; text-transform: uppercase;">Phản hồi từ Ban quản trị</span>
                                 </div>
                                 <p class="m-0 fw-600 text-secondary">{{ $report->admin_note }}</p>
                             </div>
@@ -273,3 +289,6 @@
     </main>
 
     @include('layouts.footer')
+
+</body>
+</html>

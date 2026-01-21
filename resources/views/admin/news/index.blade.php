@@ -6,6 +6,17 @@
     <span class="text-muted"><i class="far fa-calendar-alt me-2"></i>{{ date('d/m/Y') }}</span>
 </div>
 
+{{-- KHỐI THÔNG BÁO FLASH --}}
+@if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert" style="border-radius: 12px; background: #ecfdf5; color: #065f46;">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-check-circle me-2"></i>
+            <div><strong>Thành công!</strong> {{ session('success') }}</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
 <div class="card card-table shadow-sm">
     <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
         <h5 class="mb-0 fw-bold">Danh sách bài viết tin tức</h5>
@@ -51,9 +62,14 @@
                             <div class="btn-group shadow-sm">
                                 <a href="{{ route('show-news-admin', $post->id) }}" class="btn btn-sm btn-action text-info" up-follow up-target=".main-content"><i class="fas fa-eye"></i></a>
                                 <a href="{{ route('edit-news-admin', $post->id) }}" class="btn btn-sm btn-action text-warning" up-follow up-target=".main-content"><i class="fas fa-edit"></i></a>
-                                <form action="{{ route('destroy-news-admin', $post->id) }}" method="POST" class="d-inline">
+                                
+                                {{-- FORM XÓA TÙY CHỈNH --}}
+                                <form action="{{ route('destroy-news-admin', $post->id) }}" method="POST" class="d-inline delete-news-form" up-submit up-target=".main-content">
                                     @csrf @method('DELETE')
-                                    <button class="btn btn-sm btn-action text-danger" onclick="return confirm('Xóa?')"><i class="fas fa-trash-alt"></i></button>
+                                    <button type="button" class="btn btn-sm btn-action text-danger btn-trigger-delete" 
+                                            data-title="{{ e($post->title) }}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
                                 </form>
                             </div>
                         </td>
@@ -66,4 +82,68 @@
         </div>
     </div>
 </div>
+
+{{-- MODAL XÁC NHẬN XÓA TÙY CHỈNH --}}
+<div class="modal fade" id="deleteNewsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header border-0 pt-4 px-4">
+                <h5 class="modal-title fw-bold text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Xác nhận xóa bài viết</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body px-4">
+                <p class="text-muted">Bạn có chắc chắn muốn xóa bài viết tin tức này không? Hành động này không thể hoàn tác.</p>
+                <div class="p-3 bg-light rounded-3 border">
+                    <strong id="newsTitleDisplay" class="text-dark"></strong>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pb-4 px-4">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger rounded-pill px-4 fw-bold" id="btnConfirmDeleteNews">Đồng ý xóa</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- SCRIPT XỬ LÝ --}}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 1. Hiển thị Toast thành công nếu có session
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Thành công!',
+                text: "{{ session('success') }}",
+                timer: 3000,
+                showConfirmButton: false,
+                toast: true,
+                position: 'top-end'
+            });
+        @endif
+
+        // 2. Xử lý Modal xóa tùy chỉnh
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteNewsModal'));
+        const titleDisplay = document.getElementById('newsTitleDisplay');
+        const confirmBtn = document.getElementById('btnConfirmDeleteNews');
+        let currentForm = null;
+
+        // Bắt sự kiện click vào nút xóa
+        document.querySelectorAll('.btn-trigger-delete').forEach(button => {
+            button.addEventListener('click', function() {
+                currentForm = this.closest('.delete-news-form');
+                titleDisplay.textContent = this.getAttribute('data-title');
+                deleteModal.show();
+            });
+        });
+
+        // Bắt sự kiện xác nhận xóa trên Modal
+        confirmBtn.addEventListener('click', function() {
+            if (currentForm) {
+                deleteModal.hide();
+                currentForm.submit();
+            }
+        });
+    });
+</script>
 @endsection

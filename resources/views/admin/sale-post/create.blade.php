@@ -1,352 +1,376 @@
 @extends('admin.layout')
 
 @section('content')
-<div class="container-fluid">
-    {{-- Breadcrumb & Header --}}
-    <div class="row mb-4">
-        <div class="col-12">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb bg-transparent p-0 mb-2">
-                    <li class="breadcrumb-item"><a href="#" class="text-decoration-none text-muted">Bất động sản</a></li>
-                    <li class="breadcrumb-item active fw-bold" aria-current="page">Tạo bài đăng mới</li>
-                </ol>
-            </nav>
-            <div class="d-flex justify-content-between align-items-center">
-                <h2 class="fw-bold text-dark mb-0">
-                    <i class="fas fa-plus-circle text-primary me-2"></i>Thêm bài đăng mới
-                </h2>
+    {{-- CSS Tùy chỉnh --}}
+    <style>
+        .custom-card {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            margin-bottom: 1.5rem;
+        }
 
-                {{-- giữ type khi quay lại --}}
-                <a href="{{ route('index-true-sale-post-admin', ['type' => old('type','sale')]) }}"
-                   class="btn btn-outline-secondary px-3 shadow-sm"
-                   up-follow up-target=".main-content">
-                    <i class="fas fa-arrow-left me-1"></i> Quay lại
-                </a>
-            </div>
-        </div>
-    </div>
+        .form-label-custom {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+            margin-bottom: 0.5rem;
+        }
 
-    {{-- 1. Hiển thị lỗi hệ thống --}}
-    @if (session('error'))
-        <div class="alert alert-warning border-0 shadow-sm mb-4" style="border-radius: 12px;">
-            <div class="d-flex">
-                <i class="fas fa-exclamation-triangle me-3 mt-1 fa-2x text-warning"></i>
-                <div>
-                    <strong class="d-block mb-1">Lỗi hệ thống (Exception):</strong>
-                    <span class="text-dark">{{ session('error') }}</span>
-                    <p class="small mb-0 mt-2 text-muted italic">
-                        <i class="fas fa-info-circle me-1"></i> Gợi ý: Vui lòng kiểm tra lại cấu hình Database hoặc file ảnh.
-                    </p>
-                </div>
-            </div>
-        </div>
-    @endif
+        .input-group-custom {
+            border: 2px solid #f1f5f9;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            overflow: hidden;
+            background: #fff;
+            display: flex;
+            align-items: center;
+        }
 
-    {{-- 2. Hiển thị lỗi Validation --}}
-    @if ($errors->any())
-        <div class="alert alert-danger border-0 shadow-sm mb-4" style="border-radius: 12px;">
-            <h6 class="fw-bold"><i class="fas fa-exclamation-circle me-2"></i>Vui lòng kiểm tra lại các thông tin sau:</h6>
-            <ul class="mb-0">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+        .input-group-custom:focus-within {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
 
-    <form action="{{ route('store-sale-post-admin') }}" method="POST" enctype="multipart/form-data" id="createPostForm">
-        @csrf
+        .input-group-custom .input-group-text {
+            background: #f8fafc;
+            border: none;
+            color: #94a3b8;
+            padding: 0 15px;
+            height: 100%;
+        }
 
-        <div class="row g-4">
-            {{-- Cột Trái: Nội dung chính --}}
-            <div class="col-xl-8 col-lg-7">
-                <div class="card border-0 shadow-sm mb-4" style="border-radius: 15px;">
-                    <div class="card-header bg-white py-3 border-0">
-                        <h5 class="fw-bold mb-0 text-dark">Thông tin cơ bản</h5>
-                    </div>
+        .input-group-custom .form-control,
+        .input-group-custom .form-select {
+            border: none;
+            padding: 0.6rem 1rem;
+            flex: 1;
+        }
 
-                    <div class="card-body p-4 pt-0">
-                        {{-- Loại giao dịch --}}
-                        <div class="mb-4">
-                            <label class="form-label fw-bold small text-uppercase text-muted">
-                                Loại giao dịch <span class="text-danger">*</span>
-                            </label>
+        .input-group-custom .form-control:focus,
+        .input-group-custom .form-select:focus {
+            box-shadow: none;
+            outline: none;
+        }
 
-                            <div class="d-flex gap-3">
-                                <div class="flex-fill">
-                                    <input type="radio" class="btn-check" name="type" id="type_sale" value="sale"
-                                           {{ old('type', 'sale') == 'sale' ? 'checked' : '' }} autocomplete="off">
-                                    <label class="btn btn-outline-primary w-100 py-2 fw-bold" for="type_sale">
-                                        <i class="fas fa-tags me-2"></i>CẦN BÁN
-                                    </label>
-                                </div>
+        .btn-submit-gradient {
+            background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+            border: none;
+            color: white;
+            font-weight: 700;
+            padding: 12px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
 
-                                <div class="flex-fill">
-                                    <input type="radio" class="btn-check" name="type" id="type_rent" value="rent"
-                                           {{ old('type') == 'rent' ? 'checked' : '' }} autocomplete="off">
-                                    <label class="btn btn-outline-info w-100 py-2 fw-bold" for="type_rent">
-                                        <i class="fas fa-key me-2"></i>CHO THUÊ
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
+        .btn-submit-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(59, 130, 246, 0.3);
+            color: white;
+        }
+    </style>
 
-                        {{-- Tiêu đề tin đăng --}}
-                        <div class="mb-4">
-                            <label class="form-label fw-bold small text-uppercase text-muted">
-                                Tiêu đề tin đăng <span class="text-danger">*</span>
-                            </label>
-
-                            <input type="text"
-                                   name="title"
-                                   class="form-control form-control-lg @error('title') is-invalid @enderror"
-                                   value="{{ old('title') }}"
-                                   placeholder="Ví dụ: Căn hộ chung cư cao cấp 2PN tại Quận 1..."
-                                   required
-                                   style="border-radius: 10px; border: 2px solid #edf2f7;">
-                            @error('title')
-                                <div class="text-danger small mt-1">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        {{-- FIX: Loại hình bất động sản (category_id) --}}
-                        <div class="mb-4">
-                            <label class="form-label fw-bold small text-uppercase text-muted">
-                                Loại hình bất động sản <span class="text-danger">*</span>
-                            </label>
-
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-0">
-                                    <i class="fas fa-building text-primary"></i>
-                                </span>
-
-                                <select name="category_id"
-                                        class="form-select @error('category_id') is-invalid @enderror"
-                                        required
-                                        style="border: 2px solid #edf2f7; border-radius: 0 10px 10px 0;">
-                                    <option value="" disabled {{ old('category_id') ? '' : 'selected' }}>
-                                        -- Chọn loại hình --
-                                    </option>
-
-                                    @foreach($categories as $cat)
-                                        <option value="{{ $cat->id }}"
-                                                {{ (string)old('category_id') === (string)$cat->id ? 'selected' : '' }}>
-                                            {{ $cat->name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            @error('category_id')
-                                <div class="text-danger small mt-1">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        {{-- Địa chỉ chi tiết --}}
-                        <div class="mb-4">
-                            <label class="form-label fw-bold small text-uppercase text-muted">
-                                Địa chỉ chi tiết <span class="text-danger">*</span>
-                            </label>
-
-                            <div class="input-group">
-                                <span class="input-group-text bg-light border-0">
-                                    <i class="fas fa-map-marker-alt text-danger"></i>
-                                </span>
-
-                                <input type="text"
-                                       name="address"
-                                       class="form-control @error('address') is-invalid @enderror"
-                                       value="{{ old('address') }}"
-                                       placeholder="Số nhà, tên đường, phường, quận..."
-                                       required
-                                       style="border: 2px solid #edf2f7; border-radius: 0 10px 10px 0;">
-                            </div>
-
-                            @error('address')
-                                <div class="text-danger small mt-1">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        {{-- Mô tả --}}
-                        <div class="mb-0">
-                            <label class="form-label fw-bold small text-uppercase text-muted">
-                                Mô tả nội dung <span class="text-danger">*</span>
-                            </label>
-
-                            <textarea name="description"
-                                      id="description"
-                                      class="form-control @error('description') is-invalid @enderror"
-                                      placeholder="Cung cấp thông tin chi tiết về căn nhà..."
-                                      required
-                                      style="border-radius: 10px; border: 2px solid #edf2f7;">{{ old('description') }}</textarea>
-
-                            @error('description')
-                                <div class="text-danger small mt-1">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Thư viện hình ảnh --}}
-                <div class="card border-0 shadow-sm" style="border-radius: 15px;">
-                    <div class="card-header bg-white py-3 border-0">
-                        <h5 class="fw-bold mb-0 text-dark">Thư viện hình ảnh</h5>
-                    </div>
-
-                    <div class="card-body p-4 pt-0">
-                        <div class="upload-zone text-center p-5 border-dashed"
-                             style="border: 2px dashed #cbd5e0; border-radius: 15px; background-color: #f8fafc;">
-                            <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
-                            <h6 class="fw-bold">Chọn ảnh sản phẩm</h6>
-                            <p class="text-muted small">Hỗ trợ JPG, PNG, WEBP. Có thể chọn nhiều ảnh cùng lúc.</p>
-
-                            <input type="file"
-                                   name="images[]"
-                                   multiple
-                                   class="form-control mt-3 @error('images.*') is-invalid @enderror"
-                                   accept="image/*"
-                                   style="border-radius: 8px;">
-
-                            @error('images')
-                                <div class="text-danger small mt-2">{{ $message }}</div>
-                            @enderror
-                            @error('images.*')
-                                <div class="text-danger small mt-2">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Cột Phải --}}
-            <div class="col-xl-4 col-lg-5">
-                <div class="card border-0 shadow-sm mb-4" style="border-radius: 15px;">
-                    <div class="card-body p-4">
-                        <div class="mb-4">
-                            <label class="form-label fw-bold small text-uppercase text-muted">Giá niêm yết (VNĐ)</label>
-                            <div class="input-group">
-                                <input type="number"
-                                       name="price"
-                                       class="form-control form-control-lg fw-bold text-primary @error('price') is-invalid @enderror"
-                                       value="{{ old('price') }}"
-                                       required
-                                       style="border-radius: 10px 0 0 10px; border: 2px solid #edf2f7;">
-                                <span class="input-group-text bg-light border-2" style="border: 2px solid #edf2f7; border-left: 0;">VNĐ</span>
-                            </div>
-                            @error('price')
-                                <div class="text-danger small mt-1">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="form-label fw-bold small text-uppercase text-muted">Diện tích (m²)</label>
-                            <div class="input-group">
-                                <input type="number"
-                                       name="area"
-                                       class="form-control fw-bold @error('area') is-invalid @enderror"
-                                       value="{{ old('area') }}"
-                                       required
-                                       style="border-radius: 10px 0 0 10px; border: 2px solid #edf2f7;">
-                                <span class="input-group-text bg-light border-2" style="border: 2px solid #edf2f7; border-left: 0;">m²</span>
-                            </div>
-                            @error('area')
-                                <div class="text-danger small mt-1">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="row g-3 mb-4">
-                            <div class="col-6">
-                                <label class="form-label fw-bold small text-uppercase text-muted">
-                                    <i class="fas fa-bed me-1"></i> Phòng ngủ
-                                </label>
-                                <input type="number"
-                                       name="bedrooms"
-                                       class="form-control @error('bedrooms') is-invalid @enderror"
-                                       value="{{ old('bedrooms', 0) }}"
-                                       style="border-radius: 8px; border: 2px solid #edf2f7;">
-                                @error('bedrooms')
-                                    <div class="text-danger small mt-1">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="col-6">
-                                <label class="form-label fw-bold small text-uppercase text-muted">
-                                    <i class="fas fa-bath me-1"></i> Phòng tắm
-                                </label>
-                                <input type="number"
-                                       name="bathrooms"
-                                       class="form-control @error('bathrooms') is-invalid @enderror"
-                                       value="{{ old('bathrooms', 0) }}"
-                                       style="border-radius: 8px; border: 2px solid #edf2f7;">
-                                @error('bathrooms')
-                                    <div class="text-danger small mt-1">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <hr class="my-4" style="border-top: 2px dashed #edf2f7;">
-
-                        {{-- FIX: is_furnished gửi 0/1 --}}
-                        <div class="form-check form-switch mb-3">
-                            <input type="hidden" name="is_furnished" value="0">
-                            <input class="form-check-input"
-                                   type="checkbox"
-                                   name="is_furnished"
-                                   id="is_furnished"
-                                   value="1"
-                                   {{ old('is_furnished') ? 'checked' : '' }}>
-                            <label class="form-check-label fw-bold" for="is_furnished">Nội thất đầy đủ</label>
-                        </div>
-                        @error('is_furnished')
-                            <div class="text-danger small mt-1">{{ $message }}</div>
-                        @enderror
-
-                        {{-- FIX: status gửi 0/1 --}}
-                        <div class="form-check form-switch mb-3">
-                            <input type="hidden" name="status" value="0">
-                            <input class="form-check-input"
-                                   type="checkbox"
-                                   name="status"
-                                   id="status"
-                                   value="1"
-                                   {{ old('status') ? 'checked' : '' }}>
-                            <label class="form-check-label fw-bold text-success" for="status">Duyệt hiển thị ngay</label>
-                        </div>
-                        @error('status')
-                            <div class="text-danger small mt-1">{{ $message }}</div>
-                        @enderror
-                    </div>
-                </div>
-
-                <div class="card border-0 shadow-sm p-4 text-center"
-                     style="border-radius: 15px; background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);">
-                    <p class="text-white opacity-75 small mb-3">
-                        <i class="fas fa-info-circle me-1"></i> Tin đăng sẽ được gửi trực tiếp lên máy chủ.
-                    </p>
-
-                    <button type="submit"
-                            class="btn btn-light w-100 py-3 fw-bold text-primary shadow-sm mb-2"
-                            style="border-radius: 12px;">
-                        <i class="fas fa-paper-plane me-2"></i>XÁC NHẬN ĐĂNG BÀI
-                    </button>
-
-                    <a href="{{ route('index-true-sale-post-admin', ['type' => old('type','sale')]) }}"
-                       class="btn btn-link text-white text-decoration-none fw-semibold small opacity-75"
-                       up-follow up-target=".main-content">
-                        Hủy bỏ
+    <div class="container-fluid">
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb bg-transparent p-0 mb-2">
+                        <li class="breadcrumb-item"><a href="#" class="text-decoration-none text-muted">Bất động sản</a>
+                        </li>
+                        <li class="breadcrumb-item active fw-bold" aria-current="page">Tạo bài đăng mới</li>
+                    </ol>
+                </nav>
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="fw-bold text-dark mb-0">
+                        <i class="fas fa-plus-circle text-primary me-2"></i>Thêm bài đăng mới
+                    </h2>
+                    <a href="{{ route('index-true-sale-post-admin') }}" class="btn btn-outline-secondary px-3 shadow-sm"
+                        style="border-radius: 10px;">
+                        <i class="fas fa-arrow-left me-1"></i> Quay lại
                     </a>
                 </div>
             </div>
         </div>
-    </form>
-</div>
 
-<style>
-    .btn-check:checked + .btn-outline-primary { background-color: #4f46e5; color: white; border-color: #4f46e5; }
-    .btn-check:checked + .btn-outline-info { background-color: #0dcaf0; color: white; border-color: #0dcaf0; }
-    .border-dashed { transition: all 0.3s ease; }
-    .border-dashed:hover { border-color: #4f46e5 !important; background-color: #eff6ff !important; }
-    .form-control:focus { border-color: #4f46e5 !important; box-shadow: none; }
-    .btn-light:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1) !important; }
-</style>
+        {{-- Hiển thị tất cả lỗi validation để dễ debug --}}
+        @if ($errors->any())
+            <div class="alert alert-danger border-0 shadow-sm mb-4" style="border-radius: 12px;">
+                <ul class="mb-0">
+                    @foreach ($errors->all() as $error)
+                        <li><i class="fas fa-exclamation-circle me-2"></i>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <form action="{{ route('store-sale-post-admin') }}" method="POST" enctype="multipart/form-data"
+            id="createPostForm">
+            @csrf
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul>
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <div class="row g-4">
+                {{-- Cột Trái: Nội dung chính --}}
+                <div class="col-xl-8 col-lg-7">
+                    <div class="card custom-card">
+                        <div class="card-header py-3 bg-white">
+                            <h5 class="fw-bold mb-0 text-dark">Thông tin cơ bản</h5>
+                        </div>
+
+                        <div class="card-body p-4">
+                            {{-- HÀNG 1: Loại giao dịch & Loại hình BĐS --}}
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label-custom">Loại giao dịch <span
+                                            class="text-danger">*</span></label>
+                                    <div class="d-flex gap-2">
+                                        <input type="radio" class="btn-check" name="type" id="type_sale" value="sale"
+                                            {{ old('type', 'sale') == 'sale' ? 'checked' : '' }}>
+                                        <label class="btn btn-outline-primary flex-fill py-2 fw-bold" for="type_sale"
+                                            style="border-radius: 10px;">CẦN BÁN</label>
+
+                                        <input type="radio" class="btn-check" name="type" id="type_rent" value="rent"
+                                            {{ old('type') == 'rent' ? 'checked' : '' }}>
+                                        <label class="btn btn-outline-info flex-fill py-2 fw-bold" for="type_rent"
+                                            style="border-radius: 10px;">CHO THUÊ</label>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label-custom">Loại hình bất động sản <span
+                                            class="text-danger">*</span></label>
+                                    <div class="input-group-custom">
+                                        <span class="input-group-text"><i class="fas fa-building"></i></span>
+                                        <select name="category_id"
+                                            class="form-select @error('category_id') is-invalid @enderror" required>
+                                            <option value="">-- Chọn loại hình --</option>
+                                            @foreach ($categories as $category)
+                                                <option value="{{ $category->id }}"
+                                                    {{ old('category_id') == $category->id ? 'selected' : '' }}>
+                                                    {{ $category->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Tiêu đề --}}
+                            <div class="mb-4">
+                                <label class="form-label-custom">Tiêu đề tin đăng <span class="text-danger">*</span></label>
+                                <div class="input-group-custom">
+                                    <span class="input-group-text"><i class="fas fa-pen"></i></span>
+                                    <input type="text" name="title"
+                                        class="form-control @error('title') is-invalid @enderror"
+                                        value="{{ old('title') }}" placeholder="Ví dụ: Căn hộ chung cư cao cấp..."
+                                        required>
+                                </div>
+                            </div>
+
+                            {{-- Địa chỉ 3 cấp --}}
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-4">
+                                    <label class="form-label-custom">Tỉnh / Thành phố <span
+                                            class="text-danger">*</span></label>
+                                    <div class="input-group-custom">
+                                        <span class="input-group-text"><i class="fas fa-map"></i></span>
+                                        <select name="province_id" id="province_id" class="form-select" required>
+                                            <option value="">-- Chọn Tỉnh --</option>
+                                            @foreach ($provinces as $province)
+                                                <option value="{{ $province->id }}"
+                                                    {{ old('province_id') == $province->id ? 'selected' : '' }}>
+                                                    {{ $province->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label-custom">Quận / Huyện <span class="text-danger">*</span></label>
+                                    <div class="input-group-custom">
+                                        <span class="input-group-text"><i class="fas fa-map-signs"></i></span>
+                                        <select name="district_id" id="district_id" class="form-select" required>
+                                            <option value="">-- Chọn Quận --</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label-custom">Phường / Xã <span class="text-danger">*</span></label>
+                                    <div class="input-group-custom">
+                                        <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                                        <select name="ward_id" id="ward_id" class="form-select" required>
+                                            <option value="">-- Chọn Xã --</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label-custom">Số nhà, tên đường <span
+                                        class="text-danger">*</span></label>
+                                <div class="input-group-custom">
+                                    <span class="input-group-text"><i class="fas fa-home"></i></span>
+                                    <input type="text" name="address" class="form-control"
+                                        value="{{ old('address') }}" placeholder="Số nhà, tên ngõ, tên đường..."
+                                        required>
+                                </div>
+                            </div>
+
+                            <div class="mb-0">
+                                <label class="form-label-custom">Mô tả chi tiết <span class="text-danger">*</span></label>
+                                <textarea name="description" class="form-control" rows="6"
+                                    style="border: 2px solid #f1f5f9; border-radius: 12px;" required>{{ old('description') }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Thư viện ảnh --}}
+                    <div class="card custom-card">
+                        <div class="card-header py-3 bg-white d-flex justify-content-between">
+                            <h5 class="fw-bold mb-0 text-dark">Thư viện hình ảnh <span class="text-danger">*</span></h5>
+                            <small class="text-muted">Tối thiểu 1 ảnh</small>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="p-4 text-center"
+                                style="border: 2px dashed #cbd5e0; border-radius: 15px; background-color: #f8fafc;">
+                                <i class="fas fa-images fa-3x text-primary mb-3"></i>
+                                <input type="file" name="images[]" multiple class="form-control" accept="image/*"
+                                    required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Cột Phải --}}
+                <div class="col-xl-4 col-lg-5">
+                    <div class="card custom-card">
+                        <div class="card-body p-4">
+                            <div class="mb-4">
+                                <label class="form-label-custom">Giá niêm yết (VNĐ) <span
+                                        class="text-danger">*</span></label>
+                                <div class="input-group-custom">
+                                    <input type="number" name="price" class="form-control fw-bold text-primary"
+                                        value="{{ old('price') }}" required>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label-custom">Diện tích (m²) <span class="text-danger">*</span></label>
+                                <div class="input-group-custom">
+                                    <input type="number" name="area" class="form-control fw-bold"
+                                        value="{{ old('area') }}" required>
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-6">
+                                    <label class="form-label-custom">Phòng ngủ</label>
+                                    <div class="input-group-custom">
+                                        <input type="number" name="bedrooms" class="form-control"
+                                            value="{{ old('bedrooms', 0) }}">
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label-custom">Phòng tắm</label>
+                                    <div class="input-group-custom">
+                                        <input type="number" name="bathrooms" class="form-control"
+                                            value="{{ old('bathrooms', 0) }}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" name="is_furnished" id="is_furnished"
+                                    value="1" {{ old('is_furnished') ? 'checked' : '' }}>
+                                <label class="form-check-label fw-bold" for="is_furnished">Nội thất đầy đủ</label>
+                            </div>
+
+                            <button type="submit"
+                                class="btn btn-submit-gradient w-100 py-3 mt-3 shadow-sm text-uppercase">
+                                <i class="fas fa-check-circle me-2"></i> Xác nhận đăng bài
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {{-- AJAX Script --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const provinceSelect = document.getElementById('province_id');
+            const districtSelect = document.getElementById('district_id');
+            const wardSelect = document.getElementById('ward_id');
+
+            // Hàm load Quận/Huyện
+            async function loadDistricts(provinceId, selectedDistrictId = null) {
+                if (!provinceId) return;
+                districtSelect.innerHTML = '<option value="">Đang tải...</option>';
+                try {
+                    const res = await fetch(`/api/get-districts/${provinceId}`);
+                    const data = await res.json();
+                    districtSelect.innerHTML = '<option value="">-- Chọn Quận/Huyện --</option>';
+                    data.forEach(d => {
+                        const selected = d.id == selectedDistrictId ? 'selected' : '';
+                        districtSelect.innerHTML +=
+                            `<option value="${d.id}" ${selected}>${d.name}</option>`;
+                    });
+                    if (selectedDistrictId) {
+                        loadWards(selectedDistrictId, "{{ old('ward_id') }}");
+                    }
+                } catch (error) {
+                    console.error('Lỗi load Quận:', error);
+                }
+            }
+
+            // Hàm load Phường/Xã
+            async function loadWards(districtId, selectedWardId = null) {
+                if (!districtId) return;
+                wardSelect.innerHTML = '<option value="">Đang tải...</option>';
+                try {
+                    const res = await fetch(`/api/get-wards/${districtId}`);
+                    const data = await res.json();
+                    wardSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
+                    data.forEach(w => {
+                        const selected = w.id == selectedWardId ? 'selected' : '';
+                        wardSelect.innerHTML +=
+                        `<option value="${w.id}" ${selected}>${w.name}</option>`;
+                    });
+                } catch (error) {
+                    console.error('Lỗi load Xã:', error);
+                }
+            }
+
+            // Xử lý khi người dùng thay đổi Tỉnh
+            provinceSelect.addEventListener('change', function() {
+                wardSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
+                loadDistricts(this.value);
+            });
+
+            // Xử lý khi người dùng thay đổi Quận
+            districtSelect.addEventListener('change', function() {
+                loadWards(this.value);
+            });
+
+            // QUAN TRỌNG: Tự động load lại dữ liệu cũ khi Validation fail
+            const oldProvinceId = "{{ old('province_id') }}";
+            const oldDistrictId = "{{ old('district_id') }}";
+
+            if (oldProvinceId) {
+                loadDistricts(oldProvinceId, oldDistrictId);
+            }
+        });
+    </script>
+
 @endsection

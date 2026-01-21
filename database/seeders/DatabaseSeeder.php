@@ -25,13 +25,20 @@ class DatabaseSeeder extends Seeder
         //     'email' => 'test@example.com',
         // ]);
         $this->call([
-            UserSeeder::class,     // 1. Tạo người dùng trước
-            CategorySeeder::class, // 2. Tạo danh mục để bài đăng có cái mà trỏ vào
-            TestSeeder::class,     // 3. Tạo dữ liệu test
+            UserSeeder::class,
+            CategorySeeder::class,
+            ProvinceSeeder::class,
+            DistrictSeeder::class,
+            WardSeeder::class,
             SalePostSeeder::class,
+            MarketTrendSeeder::class,
             NewsSeederfinal::class,
+            ImageSeeder::class,
+            TestSeeder::class,
+            
+        
         ]);
-        $this->call(NewsSeederfinal::class);
-        $this->call(NewsSeeder::class);
+        // $this->call(NewsSeederfinal::class);
+        // $this->call(NewsSeeder::class);
     }
 }

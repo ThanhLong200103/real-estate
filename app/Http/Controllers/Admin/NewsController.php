@@ -106,25 +106,36 @@ class NewsController extends Controller
 
     public function destroy(string $id)
     {
+        // 1. Tìm bản ghi, nếu không có sẽ tự văng lỗi 404
         $news = News::findOrFail($id);
-        $title = $news->title;
 
-        DB::transaction(function () use ($news, $title) {
+        // 2. Lưu lại thông tin cần thiết ra biến riêng trước khi xóa
+        $newsId = $news->id;
+        $newsTitle = $news->title;
+        $adminId = Auth::id();
+
+        DB::transaction(function () use ($news, $newsId, $newsTitle, $adminId) {
+            // 3. Xóa các tập tin hình ảnh vật lý trong storage trước
             foreach ($news->images as $image) {
-                Storage::disk('public')->delete($image->image_url);
+                if (Storage::disk('public')->exists($image->image_url)) {
+                    Storage::disk('public')->delete($image->image_url);
+                }
             }
+
+            // 4. Xóa bản ghi tin tức (Laravel sẽ tự xóa các bản ghi Image liên quan nếu có Constrained)
             $news->delete();
 
-            // Ghi Log Hành Động
+            // 5. Ghi Log Hành Động bằng các biến đã lưu sẵn
             AdminAction::create([
-                'admin_id' => Auth::id(),
+                'admin_id'    => $adminId,
                 'action_type' => 'DELETE',
-                'description' => "Đã xóa tin tức: " . $title,
                 'target_type' => 'News',
-                'target_id' => $news->id,
+                'target_id'   => $newsId,
+                'description' => "Đã xóa tin tức: " . $newsTitle,
             ]);
         });
 
-        return redirect()->route('index-news-admin')->with('success', 'Xóa tin thành công');
+        // 6. Redirect kèm thông báo để View (Index) bắt được và hiển thị SweetAlert2
+        return redirect()->route('index-news-admin')->with('success', 'Đã xóa tin tức thành công!');
     }
 }

@@ -4,30 +4,76 @@ use App\Http\Controllers\Admin\NewsController as AdminNewsController;
 use App\Http\Controllers\Admin\SalePostController as AdminSalePostController;
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\AdminActionController;
+use App\Http\Controllers\Api\MarketTrendController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\SalePostController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\FavoriteController;
-use App\Http\Controllers\CommentController; // --- ĐÃ THÊM ---
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\UserProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Services\ProphetService;
 
+/*
+|--------------------------------------------------------------------------
+| 1. GIAO DIỆN CÔNG KHAI (Public Routes)
+|--------------------------------------------------------------------------
+*/
 
-// --- 1. GIAO DIỆN CÔNG KHAI (Ai cũng xem được) ---
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/test-ai/{id}', function ($id) {
+    $ai = new ProphetService();
+    return $ai->predictByDistrict($id);
+});
+
 Route::get('/home', [SalePostController::class, 'index'])->name('home');
+// web.php
+
+// Thêm vào sau route /home
+Route::get('/nha-dat-tai-{province_slug}', [SalePostController::class, 'provinceIndex'])->name('posts.province');
 Route::get('/sale-post/{id}', [SalePostController::class, 'show'])->name('create-sale-show');
 
 // Tin tức cho khách xem
 Route::get('/news', [NewsController::class, 'index'])->name('news.index');
 Route::get('/news/{id}', [NewsController::class, 'show'])->name('news.show');
 
+/**
+ * --- API ĐỊA LÝ (Dùng cho AJAX) ---
+ * Cho phép lấy Quận theo Tỉnh và Phường theo Quận.
+ */
+// Lấy Quận/Huyện
+Route::get('/api/get-districts/{province_id}', function ($province_id) {
+    return \App\Models\District::where('province_id', $province_id)
+        ->select('id', 'name')
+        ->get();
+})->name('api.get-districts');
 
-// --- 2. AUTHENTICATION (Khách chưa đăng nhập) ---
+// routes/api.php
+Route::get('/api/market-forecast/{district_id}', [MarketTrendController::class, 'getForecast']);
+
+// Lấy Phường/Xã (MỚI THÊM)
+Route::get('/api/get-wards/{district_id}', function ($district_id) {
+    return \App\Models\Ward::where('district_id', $district_id)
+        ->select('id', 'name')
+        ->get();
+})->name('api.get-wards');
+
+Route::get('/api/forecast', [
+    App\Http\Controllers\Api\ForecastController::class,
+    'show'
+])->name('api.forecast');
+
+
+/*
+|--------------------------------------------------------------------------
+| 2. AUTHENTICATION (Dành cho khách chưa đăng nhập)
+|--------------------------------------------------------------------------
+*/
 Route::middleware('guest')->group(function () {
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register.form');
     Route::post('/register', [AuthController::class, 'register'])->name('register');
@@ -36,7 +82,11 @@ Route::middleware('guest')->group(function () {
 });
 
 
-// --- 3. KHU VỰC USER (Yêu cầu đăng nhập - middleware: auth) ---
+/*
+|--------------------------------------------------------------------------
+| 3. KHU VỰC THÀNH VIÊN (Yêu cầu đăng nhập)
+|--------------------------------------------------------------------------
+*/
 Route::middleware('auth')->group(function () {
 
     // Đăng xuất
@@ -48,7 +98,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/reset-password', [UserProfileController::class, 'showResetPassword'])->name('user.profile.reset-password');
     Route::post('/profile/reset-password', [UserProfileController::class, 'resetPassword'])->name('user.profile.reset-password.post');
 
-    // Quản lý bài đăng cá nhân của User
+    // Quản lý bài đăng cá nhân
     Route::get('/sale-post-add', [SalePostController::class, 'create'])->name('create-sale-post');
     Route::post('/sale-post', [SalePostController::class, 'store'])->name('store-sale-post');
     Route::get('/my-posts/{id}', [SalePostController::class, 'show'])->name('user-sale-post-show');
@@ -63,27 +113,31 @@ Route::middleware('auth')->group(function () {
     Route::post('/contacts/start', [ContactController::class, 'startConversation'])->name('contacts.start');
     Route::post('/my-contacts/{id}/send', [ContactController::class, 'send'])->name('contacts.send');
 
-    // --- BÁO CÁO (REPORTS) ---
+    // Báo cáo (Reports)
     Route::post('/report/store', [ReportController::class, 'store'])->name('user.report.store');
     Route::get('/my-reports', [ReportController::class, 'index'])->name('user.report.index');
 
-    // --- YÊU THÍCH (FAVORITES) ---
+    // Yêu thích (Favorites)
     Route::post('/favorite/toggle/{id}', [FavoriteController::class, 'toggle'])->name('favorite.toggle');
     Route::get('/my-favorites', [FavoriteController::class, 'index'])->name('favorite.index');
 
-    // --- MỚI THÊM: BÌNH LUẬN (COMMENTS) ---
+    // Bình luận (Comments)
     Route::post('/sale-post/{post}/comments', [CommentController::class, 'store'])->name('comments.store');
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
 });
 
 
-// --- KHU VỰC ADMIN (auth, admin) ---
+/*
+|--------------------------------------------------------------------------
+| 4. KHU VỰC QUẢN TRỊ (Yêu cầu quyền Admin)
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
 
-    // --- NHẬT KÝ HOẠT ĐỘNG ---
+    // Nhật ký hoạt động
     Route::get('/logs', [AdminActionController::class, 'index'])->name('admin.logs.index');
 
-    // --- QUẢN LÝ TIN TỨC ---
+    // Quản lý tin tức
     Route::prefix('news')->group(function () {
         Route::get('/index', [AdminNewsController::class, 'index'])->name('index-news-admin');
         Route::get('/create', [AdminNewsController::class, 'create'])->name('create-news-admin');
@@ -94,7 +148,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
         Route::delete('/delete/{id}', [AdminNewsController::class, 'destroy'])->name('destroy-news-admin');
     });
 
-    // --- QUẢN LÝ BẤT ĐỘNG SẢN ---
+    // Quản lý bất động sản
     Route::prefix('sale-post')->group(function () {
         Route::get('/index_true', [AdminSalePostController::class, 'index_true'])->name('index-true-sale-post-admin');
         Route::get('/index_false', [AdminSalePostController::class, 'index_false'])->name('index-false-sale-post-admin');
@@ -107,7 +161,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
         Route::delete('/delete/{id}', [AdminSalePostController::class, 'destroy'])->name('destroy-sale-post-admin');
     });
 
-    // --- QUẢN LÝ BÁO CÁO ---
+    // Quản lý báo cáo
     Route::prefix('report')->group(function () {
         Route::get('/index', [AdminReportController::class, 'index'])->name('index-report-admin');
         Route::patch('/update/{id}', [AdminReportController::class, 'updateStatus'])->name('update-report-admin');
