@@ -277,14 +277,14 @@
                                     <label class="form-label-custom">Phòng ngủ</label>
                                     <div class="input-group-custom">
                                         <input type="number" name="bedrooms" class="form-control"
-                                            value="{{ old('bedrooms', 0) }}">
+                                            value="{{ old('bedrooms', 0) }}" min="0"> {{-- Thêm min="0" --}}
                                     </div>
                                 </div>
                                 <div class="col-6">
                                     <label class="form-label-custom">Phòng tắm</label>
                                     <div class="input-group-custom">
                                         <input type="number" name="bathrooms" class="form-control"
-                                            value="{{ old('bathrooms', 0) }}">
+                                            value="{{ old('bathrooms', 0) }}" min="0"> {{-- Thêm min="0" --}}
                                     </div>
                                 </div>
                             </div>
@@ -345,7 +345,7 @@
                     data.forEach(w => {
                         const selected = w.id == selectedWardId ? 'selected' : '';
                         wardSelect.innerHTML +=
-                        `<option value="${w.id}" ${selected}>${w.name}</option>`;
+                            `<option value="${w.id}" ${selected}>${w.name}</option>`;
                     });
                 } catch (error) {
                     console.error('Lỗi load Xã:', error);

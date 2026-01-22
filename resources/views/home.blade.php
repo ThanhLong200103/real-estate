@@ -98,20 +98,20 @@
                 <div class="collapse {{ request('province_id') || request('area_range') || request('bedrooms') ? 'show' : '' }}"
                     id="advancedFilter">
                     @if (request()->anyFilled([
-                                    'keyword',
-                                    'type',
-                                    'category_id',
-                                    'price_range',
-                                    'province_id',
-                                    'district_id',
-                                    'ward_id',
-                                    'area_range',
-                                ]))
-                                <a href="{{ route('home') }}" class="btn btn-outline-secondary rounded-3"
-                                    title="Xóa tất cả bộ lọc">
-                                    <i class="fas fa-sync-alt"></i>
-                                </a>
-                            @endif
+                            'keyword',
+                            'type',
+                            'category_id',
+                            'price_range',
+                            'province_id',
+                            'district_id',
+                            'ward_id',
+                            'area_range',
+                        ]))
+                        <a href="{{ route('home') }}" class="btn btn-outline-secondary rounded-3"
+                            title="Xóa tất cả bộ lọc">
+                            <i class="fas fa-sync-alt"></i>
+                        </a>
+                    @endif
                     <div class="pt-4 border-top mt-3">
                         <div class="row g-3">
                             <div class="col-md-3">
@@ -152,6 +152,50 @@
                                         m²</option>
                                 </select>
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-3">
+                            <label class="search-label mb-2 fw-bold small">Phòng ngủ</label>
+                            <select name="bedrooms" class="form-select rounded-3">
+                                <option value="">Tất cả phòng ngủ</option>
+                                @for ($i = 1; $i <= 5; $i++)
+                                    <option value="{{ $i }}"
+                                        {{ request('bedrooms') == $i ? 'selected' : '' }}>{{ $i }}+ phòng
+                                    </option>
+                                @endfor
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="search-label mb-2 fw-bold small">Phòng tắm</label>
+                            <select name="bathrooms" class="form-select rounded-3">
+                                <option value="">Tất cả phòng tắm</option>
+                                @for ($i = 1; $i <= 5; $i++)
+                                    <option value="{{ $i }}"
+                                        {{ request('bathrooms') == $i ? 'selected' : '' }}>{{ $i }}+ phòng
+                                    </option>
+                                @endfor
+                            </select>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            @if (request()->anyFilled([
+                                    'keyword',
+                                    'type',
+                                    'category_id',
+                                    'price_range',
+                                    'province_id',
+                                    'district_id',
+                                    'ward_id',
+                                    'area_range',
+                                    'bedrooms',
+                                    'bathrooms',
+                                ]))
+                                <a href="{{ route('home') }}" class="btn btn-outline-danger btn-sm rounded-3 mb-1"
+                                    title="Xóa tất cả bộ lọc">
+                                    <i class="fas fa-sync-alt me-1"></i> Xóa lọc
+                                </a>
+                            @endif
                         </div>
                     </div>
                 </div>
