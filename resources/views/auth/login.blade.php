@@ -1,70 +1,395 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng nhập an toàn | ESTATE HUB</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        :root { --primary: #6c5ce7; --dark: #2d3436; --light-bg: #f8faff; }
-        body { background-color: var(--light-bg); display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; font-family: 'Inter', sans-serif; }
-        .auth-card { background: #fff; padding: 40px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 100%; max-width: 420px; }
-        .brand-logo { text-align: center; font-weight: 800; font-size: 26px; margin-bottom: 30px; color: var(--dark); text-decoration: none; display: block; }
-        .form-control { border-radius: 12px; padding: 12px 15px; border: 1px solid #e1e5ee; }
-        .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.1); }
-        .btn-primary-custom { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 700; width: 100%; transition: 0.3s; }
-        .btn-primary-custom:hover { background: #5a4bcf; transform: translateY(-2px); }
-        .error-text { color: #ff7675; font-size: 13px; margin-top: 5px; font-weight: 500; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Đăng nhập | ESTATE HUB</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    :root{
+      --sky:#38bdf8;
+      --sky-dark:#0ea5e9;
+      --text:#0f172a;
+      --muted:#64748b;
+      --bg-right:#eef2f7;
+      --stroke:#e6edf5;
+      --radius:22px;
+    }
+
+    body{ margin:0; min-height:100vh; font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif; color:var(--text); background:#f3f6fb; }
+    .auth-shell{ min-height:100vh; display:flex; align-items:stretch; }
+
+    /* LEFT */
+    .auth-left{
+      position:relative; flex:1.25;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.16), rgba(0,0,0,.35)),
+        url("https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1600&q=80")
+        center/cover no-repeat;
+      overflow:hidden;
+    }
+    .left-overlay{ position:absolute; inset:0; display:flex; align-items:flex-end; padding:56px; }
+    .left-brand{ color:#fff; max-width:560px; text-shadow:0 8px 24px rgba(0,0,0,.25); }
+    .left-brand h1{ margin:0 0 10px; font-weight:900; font-size:clamp(34px,3.4vw,56px); letter-spacing:.2px; }
+    .left-brand p{ margin:0; opacity:.95; font-weight:600; font-size:15px; }
+
+    /* RIGHT */
+    .auth-right{ flex:0.85; background:var(--bg-right); display:flex; align-items:center; justify-content:center; padding:44px 36px; }
+    .login-card{
+      width:100%; max-width:560px; background:#fff; border:1px solid rgba(15,23,42,.06);
+      border-radius:var(--radius); box-shadow:0 22px 60px rgba(15,23,42,.12);
+      padding:34px 34px 28px;
+    }
+
+    /* LOGO */
+    .brand-row{ display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+    .brand-icon{
+      width:44px;height:44px;border-radius:14px;display:grid;place-items:center;
+      background:rgba(56,189,248,.14); color:var(--sky-dark); font-size:18px;
+    }
+    .brand-title{ font-weight:900; font-size:22px; margin:0; line-height:1.1; letter-spacing:.2px; }
+    .brand-title .hub{ color:var(--sky); }
+    .brand-sub{ margin:3px 0 0; font-size:13px; color:var(--muted); font-weight:700; }
+
+    .welcome{ margin:8px 0 18px; }
+    .welcome h2{ margin:0 0 6px; font-size:34px; font-weight:900; letter-spacing:-.2px; }
+    .welcome p{ margin:0; color:var(--muted); font-weight:600; }
+
+    .form-label{ font-size:13px; font-weight:800; color:#334155; margin-bottom:8px; }
+    .input-wrap{ position:relative; }
+    .input-icon{ position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:16px; pointer-events:none; }
+
+    .form-control{
+      border-radius:14px; padding:13px 14px 13px 44px; border:1px solid var(--stroke);
+      font-weight:700; box-shadow:none !important;
+    }
+    .form-control:focus{
+      border-color:rgba(56,189,248,.65);
+      box-shadow:0 0 0 4px rgba(56,189,248,.16) !important;
+    }
+
+    .pass-tools{ position:absolute; right:10px; top:50%; transform:translateY(-50%); display:flex; align-items:center; }
+    .eye-btn{ width:38px;height:38px;border:none;background:transparent;color:#94a3b8;border-radius:12px;display:grid;place-items:center; }
+    .eye-btn:hover{ background:rgba(148,163,184,.14); color:#64748b; }
+
+    .remember-row{ display:flex; align-items:center; gap:10px; margin-top:10px; }
+    .remember-row .form-check-label{ font-weight:800; color:#334155; }
+
+    .btn-brand{
+      margin-top:18px; width:100%;
+      background:var(--sky); border:none; color:#fff; padding:14px 16px; border-radius:14px;
+      font-weight:900; letter-spacing:.2px; transition:.18s;
+    }
+    .btn-brand:hover{ background:var(--sky-dark); transform:translateY(-1px); }
+
+    .divider{ display:flex; align-items:center; gap:14px; margin:18px 0 14px; color:#94a3b8; font-weight:800; font-size:12px; }
+    .divider::before,.divider::after{ content:""; height:1px; flex:1; background:#e7edf5; }
+
+    .social-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .btn-social{
+      border:1px solid #e7edf5; background:#fff; border-radius:14px; padding:12px 14px;
+      display:flex; align-items:center; justify-content:center; gap:10px;
+      font-weight:900; color:#0f172a; transition:.15s; white-space:nowrap;
+      cursor:pointer; user-select:none;
+    }
+    .btn-social:hover{ transform:translateY(-1px); box-shadow:0 10px 28px rgba(15,23,42,.08); }
+
+    .bottom-link{ margin-top:16px; text-align:center; color:var(--muted); font-weight:700; font-size:14px; }
+    .bottom-link a{ color:var(--sky-dark); font-weight:900; text-decoration:none; }
+    .bottom-link a:hover{ color:var(--sky); }
+
+    .error-text{ color:#ef4444; font-size:13px; font-weight:800; margin-top:6px; }
+
+    /* ====== Maintenance Modal ====== */
+    .m-modal{
+      position:fixed; inset:0;
+      background: rgba(15,23,42,.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+      z-index: 9999;
+    }
+    .m-modal.show{ display:flex; }
+
+    .m-dialog{
+      width:100%;
+      max-width: 420px;
+      background:#fff;
+      border-radius: 18px;
+      box-shadow: 0 25px 70px rgba(15,23,42,.25);
+      overflow:hidden;
+      border: 1px solid rgba(15,23,42,.08);
+      animation: pop .16s ease-out;
+    }
+    @keyframes pop{
+      from{ transform: translateY(8px) scale(.98); opacity:.6; }
+      to{ transform: translateY(0) scale(1); opacity:1; }
+    }
+
+    .m-head{
+      padding: 16px 18px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      background: rgba(56,189,248,.10);
+    }
+    .m-title{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-weight: 900;
+      color:#0f172a;
+    }
+    .m-icon{
+      width:36px;height:36px;border-radius:12px;
+      display:grid;place-items:center;
+      background:#fff;
+      border:1px solid rgba(15,23,42,.06);
+      color: var(--sky-dark);
+    }
+    .m-close{
+      width:36px;height:36px;border-radius:12px;
+      border:none;background:#fff;
+      border:1px solid rgba(15,23,42,.06);
+      color:#64748b;
+      display:grid;place-items:center;
+    }
+    .m-close:hover{ background:#f8fafc; color:#0f172a; }
+
+    .m-body{ padding: 16px 18px 6px; }
+    .m-body p{ margin:0 0 12px; color:#334155; font-weight:700; line-height:1.5; }
+    .m-note{
+      background:#f8fafc;
+      border:1px dashed rgba(15,23,42,.15);
+      border-radius: 14px;
+      padding: 10px 12px;
+      color:#475569;
+      font-weight:700;
+      font-size: 13px;
+    }
+
+    .m-actions{
+      padding: 14px 18px 18px;
+      display:flex;
+      gap:10px;
+    }
+    .m-btn{
+      width:100%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: none;
+      font-weight: 900;
+      letter-spacing:.1px;
+    }
+    .m-btn.primary{ background: var(--sky); color:#fff; }
+    .m-btn.primary:hover{ background: var(--sky-dark); }
+    .m-btn.ghost{
+      background: #fff;
+      border: 1px solid rgba(15,23,42,.12);
+      color:#0f172a;
+    }
+    .m-btn.ghost:hover{ background:#f8fafc; }
+
+    @media (max-width: 992px){
+      .auth-shell{ flex-direction:column; }
+      .auth-left{ min-height: 44vh; }
+      .auth-right{ padding: 24px; }
+      .login-card{ max-width: 680px; }
+      .left-overlay{ padding: 26px; }
+    }
+    @media (max-width: 520px){
+      .login-card{ padding: 22px; }
+      .social-grid{ grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
+
 <body>
+  <div class="auth-shell">
 
-<div class="auth-card">
-    <a href="/" class="brand-logo">ESTATE<span style="color: #00cec9;">HUB</span></a>
-    
-    <h5 class="text-center fw-bold mb-4">Đăng nhập tài khoản</h5>
+    <!-- LEFT -->
+    <section class="auth-left">
+      <div class="left-overlay">
+        <div class="left-brand">
+          <h1>ESTATE<span style="color: var(--sky);">HUB</span></h1>
+          <p>Nền tảng bất động sản uy tín • Minh bạch • Nhanh chóng</p>
+        </div>
+      </div>
+    </section>
 
-    @if(session('status'))
-        <div class="alert alert-success py-2 small" style="border-radius: 10px;">{{ session('status') }}</div>
-    @endif
+    <!-- RIGHT -->
+    <section class="auth-right">
+      <div class="login-card">
 
-    {{-- Form tắt hoàn toàn autocomplete để tránh rò rỉ --}}
-    <form action="{{ route('login') }}" method="POST" autocomplete="off">
-        @csrf
-        
-        {{-- Honeypot: Đánh lừa trình duyệt tự động điền --}}
-        <input type="text" style="display:none" name="prevent_autofill_user">
-        <input type="password" style="display:none" name="prevent_autofill_pass">
-
-        <div class="mb-3">
-            <label class="form-label small fw-bold">Email công việc</label>
-            {{-- Không sử dụng value="{{ old('email') }}" --}}
-            <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" 
-                   placeholder="Nhập email của bạn" required autocomplete="off">
-            @error('email') <div class="error-text"><i class="fas fa-exclamation-circle"></i> {{ $message }}</div> @enderror
+        <div class="brand-row">
+          <div class="brand-icon"><i class="fa-solid fa-house"></i></div>
+          <div>
+            <p class="brand-title mb-0">ESTATE<span class="hub">HUB</span></p>
+            <p class="brand-sub">Agent Portal</p>
+          </div>
         </div>
 
-        <div class="mb-4">
-            <label class="form-label small fw-bold">Mật khẩu</label>
-            <input type="password" name="password" class="form-control" 
-                   placeholder="••••••••" required autocomplete="new-password">
+        <div class="welcome">
+          <h2>Welcome back</h2>
+          <p>Sign in to access your dashboard</p>
         </div>
 
-        <div class="mb-4 d-flex justify-content-between align-items-center">
-            <div class="form-check">
-                <input type="checkbox" name="remember" class="form-check-input" id="rememberMe">
-                <label class="form-check-label small text-muted" for="rememberMe">Ghi nhớ phiên đăng nhập</label>
+        @if(session('status'))
+          <div class="alert alert-success py-2 small" style="border-radius: 12px;">
+            {{ session('status') }}
+          </div>
+        @endif
+
+        <form action="{{ route('login') }}" method="POST" autocomplete="off">
+          @csrf
+
+          <input type="text" style="display:none" name="prevent_autofill_user">
+          <input type="password" style="display:none" name="prevent_autofill_pass">
+
+          <div class="mb-3">
+            <label class="form-label">Email Address</label>
+            <div class="input-wrap">
+              <span class="input-icon"><i class="fa-regular fa-envelope"></i></span>
+              <input type="email" name="email"
+                     class="form-control @error('email') is-invalid @enderror"
+                     placeholder="Enter your email" required autocomplete="off">
             </div>
-        </div>
+            @error('email') <div class="error-text"><i class="fa-solid fa-circle-exclamation"></i> {{ $message }}</div> @enderror
+          </div>
 
-        <button type="submit" class="btn-primary-custom mb-3">Đăng nhập ngay</button>
-        
-        <div class="text-center">
-            <p class="small text-muted">Chưa có tài khoản? <a href="{{ route('register.form') }}" class="fw-bold text-primary text-decoration-none">Đăng ký mới</a></p>
-        </div>
-    </form>
-</div>
+          <div class="mb-2">
+            <label class="form-label">Password</label>
+            <div class="input-wrap">
+              <span class="input-icon"><i class="fa-solid fa-lock"></i></span>
+              <input id="passwordInput" type="password" name="password"
+                     class="form-control" placeholder="••••••••"
+                     required autocomplete="new-password">
+              <div class="pass-tools">
+                <button type="button" class="eye-btn" id="togglePass" aria-label="Toggle password">
+                  <i class="fa-regular fa-eye"></i>
+                </button>
+              </div>
+            </div>
+          </div>
 
+          <div class="remember-row">
+            <input class="form-check-input mt-0" type="checkbox" name="remember" id="rememberMe">
+            <label class="form-check-label" for="rememberMe">Remember me</label>
+          </div>
+
+          <button type="submit" class="btn-brand">Sign In to Dashboard</button>
+
+          <div class="divider">or continue with</div>
+
+          <!-- Social: click -> show maintenance modal -->
+          <div class="social-grid">
+            <div class="btn-social" role="button" tabindex="0" data-maintenance="Google">
+              <img alt="Google" width="18" height="18" src="https://www.svgrepo.com/show/475656/google-color.svg">
+              Google
+            </div>
+
+            <div class="btn-social" role="button" tabindex="0" data-maintenance="Microsoft">
+              <img alt="Microsoft" width="18" height="18" src="https://www.svgrepo.com/show/452062/microsoft.svg">
+              Microsoft
+            </div>
+          </div>
+
+          <div class="bottom-link">
+            New agent? <a href="{{ route('register.form') }}">Request access</a>
+          </div>
+        </form>
+
+      </div>
+    </section>
+  </div>
+
+  <!-- Maintenance Modal -->
+  <div class="m-modal" id="maintenanceModal" aria-hidden="true">
+    <div class="m-dialog" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+      <div class="m-head">
+        <div class="m-title" id="mTitle">
+          <span class="m-icon"><i class="fa-solid fa-screwdriver-wrench"></i></span>
+          <span id="mProvider">Tính năng đang bảo trì</span>
+        </div>
+        <button class="m-close" type="button" id="mClose" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="m-body">
+        <p id="mText">Đăng nhập bằng mạng xã hội hiện đang được bảo trì. Vui lòng đăng nhập bằng email/mật khẩu.</p>
+        <div class="m-note">
+          Gợi ý: Nếu bạn chưa có tài khoản, hãy bấm <b>Request access</b> để đăng ký.
+        </div>
+      </div>
+
+      <div class="m-actions">
+        <button class="m-btn ghost" type="button" id="mOk">Đã hiểu</button>
+        <button class="m-btn primary" type="button" id="mFocusEmail">Đi tới Email</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // show/hide password
+    const pass = document.getElementById('passwordInput');
+    const btn = document.getElementById('togglePass');
+    btn?.addEventListener('click', () => {
+      const isHidden = pass.type === 'password';
+      pass.type = isHidden ? 'text' : 'password';
+      btn.innerHTML = isHidden
+        ? '<i class="fa-regular fa-eye-slash"></i>'
+        : '<i class="fa-regular fa-eye"></i>';
+    });
+
+    // maintenance modal
+    const modal = document.getElementById('maintenanceModal');
+    const providerEl = document.getElementById('mProvider');
+    const textEl = document.getElementById('mText');
+
+    function openMaintenance(provider){
+      providerEl.textContent = provider + " đang bảo trì";
+      textEl.textContent = "Đăng nhập bằng " + provider + " hiện đang được bảo trì. Vui lòng đăng nhập bằng email/mật khẩu.";
+      modal.classList.add('show');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeMaintenance(){
+      modal.classList.remove('show');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+
+    document.querySelectorAll('[data-maintenance]').forEach(el => {
+      el.addEventListener('click', () => openMaintenance(el.dataset.maintenance));
+      el.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter' || e.key === ' ') openMaintenance(el.dataset.maintenance);
+      });
+    });
+
+    document.getElementById('mClose')?.addEventListener('click', closeMaintenance);
+    document.getElementById('mOk')?.addEventListener('click', closeMaintenance);
+
+    // click outside dialog closes
+    modal?.addEventListener('click', (e) => {
+      if(e.target === modal) closeMaintenance();
+    });
+
+    // ESC closes
+    window.addEventListener('keydown', (e) => {
+      if(e.key === 'Escape' && modal.classList.contains('show')) closeMaintenance();
+    });
+
+    // focus email
+    document.getElementById('mFocusEmail')?.addEventListener('click', () => {
+      closeMaintenance();
+      const email = document.querySelector('input[name="email"]');
+      email?.focus();
+    });
+  </script>
 </body>
 </html>
