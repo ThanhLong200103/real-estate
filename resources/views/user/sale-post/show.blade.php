@@ -256,25 +256,25 @@
 <body>
 
     @php
-        $convertImage = function ($path) {
-            if (!$path) {
-                return 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?auto=format&fit=crop&w=1000&q=80';
-            }
-            if (filter_var($path, FILTER_VALIDATE_URL)) {
-                return $path;
-            }
-            return asset('storage/' . $path);
-        };
+    $convertImage = function ($path) {
+    if (!$path) {
+    return 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?auto=format&fit=crop&w=1000&q=80';
+    }
+    if (filter_var($path, FILTER_VALIDATE_URL)) {
+    return $path;
+    }
+    return asset('storage/' . $path);
+    };
 
-        $formatPrice = function ($price) {
-            if ($price >= 1000000000) {
-                return number_format($price / 1000000000, 1, ',', '.') . ' Tỷ';
-            }
-            if ($price >= 1000000) {
-                return number_format($price / 1000000, 0, ',', '.') . ' Triệu';
-            }
-            return number_format($price) . ' đ';
-        };
+    $formatPrice = function ($price) {
+    if ($price >= 1000000000) {
+    return number_format($price / 1000000000, 1, ',', '.') . ' Tỷ';
+    }
+    if ($price >= 1000000) {
+    return number_format($price / 1000000, 0, ',', '.') . ' Triệu';
+    }
+    return number_format($price) . ' đ';
+    };
     @endphp
 
     <header class="sub-header">
@@ -290,8 +290,8 @@
                             class="fas fa-th-list"></i> Quản lý tin</a>
 
                     @if (auth()->check() && (int) auth()->id() === (int) $salePost->user_id)
-                        <a href="{{ route('user-edit-sale-post', $salePost->id) }}"
-                            class="btn-custom btn-primary-custom"><i class="fas fa-magic"></i> Chỉnh sửa ngay</a>
+                    <a href="{{ route('user-edit-sale-post', $salePost->id) }}"
+                        class="btn-custom btn-primary-custom"><i class="fas fa-magic"></i> Chỉnh sửa ngay</a>
                     @endif
                 </div>
             </div>
@@ -305,26 +305,26 @@
                     <div id="saleCarousel" class="carousel slide" data-bs-ride="carousel">
                         <div class="carousel-inner">
                             @forelse($salePost->images as $key => $img)
-                                <div class="carousel-item {{ $key == 0 ? 'active' : '' }}">
-                                    <img src="{{ $convertImage($img->image_url) }}" alt="{{ $salePost->title }}">
-                                </div>
+                            <div class="carousel-item {{ $key == 0 ? 'active' : '' }}">
+                                <img src="{{ $convertImage($img->image_url) }}" alt="{{ $salePost->title }}">
+                            </div>
                             @empty
-                                <div class="carousel-item active">
-                                    <img src="{{ $convertImage(null) }}" alt="Placeholder">
-                                </div>
+                            <div class="carousel-item active">
+                                <img src="{{ $convertImage(null) }}" alt="Placeholder">
+                            </div>
                             @endforelse
                         </div>
                         @if ($salePost->images->count() > 1)
-                            <button class="carousel-control-prev" type="button" data-bs-target="#saleCarousel"
-                                data-bs-slide="prev">
-                                <span class="carousel-control-prev-icon p-3 bg-dark rounded-circle"
-                                    style="width: 50px; height: 50px;"></span>
-                            </button>
-                            <button class="carousel-control-next" type="button" data-bs-target="#saleCarousel"
-                                data-bs-slide="next">
-                                <span class="carousel-control-next-icon p-3 bg-dark rounded-circle"
-                                    style="width: 50px; height: 50px;"></span>
-                            </button>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#saleCarousel"
+                            data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon p-3 bg-dark rounded-circle"
+                                style="width: 50px; height: 50px;"></span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#saleCarousel"
+                            data-bs-slide="next">
+                            <span class="carousel-control-next-icon p-3 bg-dark rounded-circle"
+                                style="width: 50px; height: 50px;"></span>
+                        </button>
                         @endif
                     </div>
                 </div>
@@ -338,17 +338,17 @@
                                 {{ $salePost->created_at->format('d/m/Y') }}</span>
 
                             @if (auth()->check() && (int) auth()->id() === (int) $salePost->user_id)
-                                @if ($salePost->status)
-                                    <span class="badge bg-success rounded-pill px-3 py-1 fw-800"
-                                        style="font-size: 10px;">
-                                        <i class="fas fa-check-circle me-1"></i> Đã được duyệt
-                                    </span>
-                                @else
-                                    <span class="badge bg-warning text-dark rounded-pill px-3 py-1 fw-800"
-                                        style="font-size: 10px;">
-                                        <i class="fas fa-clock me-1"></i> Đang chờ duyệt
-                                    </span>
-                                @endif
+                            @if ($salePost->status)
+                            <span class="badge bg-success rounded-pill px-3 py-1 fw-800"
+                                style="font-size: 10px;">
+                                <i class="fas fa-check-circle me-1"></i> Đã được duyệt
+                            </span>
+                            @else
+                            <span class="badge bg-warning text-dark rounded-pill px-3 py-1 fw-800"
+                                style="font-size: 10px;">
+                                <i class="fas fa-clock me-1"></i> Đang chờ duyệt
+                            </span>
+                            @endif
                             @endif
                         </div>
 
@@ -457,112 +457,112 @@
                     <div class="comment-list mb-4">
                         {{-- Chỉ duyệt qua các bình luận gốc (parent_id là null) --}}
                         @forelse($salePost->comments->where('parent_id', null) as $comment)
-                            <div class="comment-wrapper mb-4" id="comment-{{ $comment->id }}">
-                                <div class="d-flex gap-3">
-                                    <div class="avatar-circle m-0"
-                                        style="width: 50px; height: 50px; font-size: 20px; flex-shrink: 0;">
-                                        {{ substr($comment->user->name ?? 'U', 0, 1) }}
+                        <div class="comment-wrapper mb-4" id="comment-{{ $comment->id }}">
+                            <div class="d-flex gap-3">
+                                <div class="avatar-circle m-0"
+                                    style="width: 50px; height: 50px; font-size: 20px; flex-shrink: 0;">
+                                    {{ substr($comment->user->name ?? 'U', 0, 1) }}
+                                </div>
+                                <div class="comment-box flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <strong
+                                            class="text-dark">{{ $comment->user->name ?? 'Người dùng' }}</strong>
+                                        <span class="text-muted"
+                                            style="font-size: 11px;">{{ $comment->created_at->diffForHumans() }}</span>
                                     </div>
-                                    <div class="comment-box flex-grow-1">
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <strong
-                                                class="text-dark">{{ $comment->user->name ?? 'Người dùng' }}</strong>
-                                            <span class="text-muted"
-                                                style="font-size: 11px;">{{ $comment->created_at->diffForHumans() }}</span>
-                                        </div>
-                                        <p class="m-0 text-secondary small">{{ $comment->content }}</p>
+                                    <p class="m-0 text-secondary small">{{ $comment->content }}</p>
 
-                                        {{-- Nút trả lời --}}
-                                        <div class="mt-2">
-                                            <button class="btn btn-sm p-0 text-primary fw-bold small me-3"
-                                                onclick="toggleReplyForm({{ $comment->id }})">
-                                                <i class="fas fa-reply fa-xs"></i> Trả lời
-                                            </button>
-                                        </div>
+                                    {{-- Nút trả lời --}}
+                                    <div class="mt-2">
+                                        <button class="btn btn-sm p-0 text-primary fw-bold small me-3"
+                                            onclick="toggleReplyForm({{ $comment->id }})">
+                                            <i class="fas fa-reply fa-xs"></i> Trả lời
+                                        </button>
+                                    </div>
 
-                                        {{-- Form trả lời (ẩn mặc định) --}}
-                                        <div id="reply-form-{{ $comment->id }}" class="mt-3 d-none">
-                                            <form action="{{ route('comments.store', $salePost->id) }}"
-                                                method="POST">
-                                                @csrf
-                                                <input type="hidden" name="parent_id" value="{{ $comment->id }}">
-                                                <div class="input-group bg-white p-1 rounded-pill border shadow-sm">
-                                                    <input type="text" name="content"
-                                                        class="form-control border-0 bg-transparent px-3 small"
-                                                        placeholder="Phản hồi bình luận này..." required>
-                                                    <button class="btn btn-primary-custom rounded-pill px-3 py-1"
-                                                        type="submit" style="font-size: 12px;">Gửi</button>
-                                                </div>
-                                            </form>
-                                        </div>
+                                    {{-- Form trả lời (ẩn mặc định) --}}
+                                    <div id="reply-form-{{ $comment->id }}" class="mt-3 d-none">
+                                        <form action="{{ route('comments.store', $salePost->id) }}"
+                                            method="POST">
+                                            @csrf
+                                            <input type="hidden" name="parent_id" value="{{ $comment->id }}">
+                                            <div class="input-group bg-white p-1 rounded-pill border shadow-sm">
+                                                <input type="text" name="content"
+                                                    class="form-control border-0 bg-transparent px-3 small"
+                                                    placeholder="Phản hồi bình luận này..." required>
+                                                <button class="btn btn-primary-custom rounded-pill px-3 py-1"
+                                                    type="submit" style="font-size: 12px;">Gửi</button>
+                                            </div>
+                                        </form>
                                     </div>
                                 </div>
+                            </div>
 
-                                {{-- Duyệt qua các câu trả lời (Replies) --}}
-                                @if ($comment->replies->count() > 0)
-                                    <div class="replies-container ms-5 mt-3 border-start ps-3">
-                                        {{-- Trong phần duyệt Replies --}}
-                                        @foreach ($comment->replies as $reply)
-                                            <div class="d-flex gap-2 mb-3">
-                                                <div class="avatar-circle m-0"
-                                                    style="width: 35px; height: 35px; font-size: 14px; flex-shrink: 0; background: #a29bfe;">
-                                                    {{ substr($reply->user->name ?? 'U', 0, 1) }}
-                                                </div>
-                                                <div class="comment-box flex-grow-1 py-2 px-3"
-                                                    style="background: #f0f2f5;">
-                                                    <div
-                                                        class="d-flex justify-content-between align-items-center mb-1">
-                                                        <strong
-                                                            class="text-dark small">{{ $reply->user->name ?? 'Người dùng' }}</strong>
-                                                        <span class="text-muted"
-                                                            style="font-size: 10px;">{{ $reply->created_at->diffForHumans() }}</span>
-                                                    </div>
-
-                                                    {{-- Nội dung phản hồi --}}
-                                                    <p class="m-0 text-secondary small">
-                                                        {{ $reply->content }}
-                                                    </p>
-
-                                                    {{-- QUAN TRỌNG: Thêm nút trả lời cho cả bình luận con --}}
-                                                    <button class="btn btn-sm p-0 text-primary fw-bold"
-                                                        style="font-size: 10px;"
-                                                        onclick="toggleReplyForm({{ $comment->id }}, '{{ $reply->user->name }}')">
-                                                        Trả lời
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        @endforeach
+                            {{-- Duyệt qua các câu trả lời (Replies) --}}
+                            @if ($comment->replies->count() > 0)
+                            <div class="replies-container ms-5 mt-3 border-start ps-3">
+                                {{-- Trong phần duyệt Replies --}}
+                                @foreach ($comment->replies as $reply)
+                                <div class="d-flex gap-2 mb-3">
+                                    <div class="avatar-circle m-0"
+                                        style="width: 35px; height: 35px; font-size: 14px; flex-shrink: 0; background: #a29bfe;">
+                                        {{ substr($reply->user->name ?? 'U', 0, 1) }}
                                     </div>
-                                @endif
+                                    <div class="comment-box flex-grow-1 py-2 px-3"
+                                        style="background: #f0f2f5;">
+                                        <div
+                                            class="d-flex justify-content-between align-items-center mb-1">
+                                            <strong
+                                                class="text-dark small">{{ $reply->user->name ?? 'Người dùng' }}</strong>
+                                            <span class="text-muted"
+                                                style="font-size: 10px;">{{ $reply->created_at->diffForHumans() }}</span>
+                                        </div>
+
+                                        {{-- Nội dung phản hồi --}}
+                                        <p class="m-0 text-secondary small">
+                                            {{ $reply->content }}
+                                        </p>
+
+                                        {{-- QUAN TRỌNG: Thêm nút trả lời cho cả bình luận con --}}
+                                        <button class="btn btn-sm p-0 text-primary fw-bold"
+                                            style="font-size: 10px;"
+                                            onclick="toggleReplyForm({{ $comment->id }}, '{{ $reply->user->name }}')">
+                                            Trả lời
+                                        </button>
+                                    </div>
+                                </div>
+                                @endforeach
                             </div>
+                            @endif
+                        </div>
                         @empty
-                            <div class="text-center py-4 border rounded-4 bg-light">
-                                <i class="far fa-comments text-muted mb-2" style="font-size: 2rem;"></i>
-                                <p class="text-muted small m-0">Hãy là người đầu tiên đặt câu hỏi về tin đăng này.</p>
-                            </div>
+                        <div class="text-center py-4 border rounded-4 bg-light">
+                            <i class="far fa-comments text-muted mb-2" style="font-size: 2rem;"></i>
+                            <p class="text-muted small m-0">Hãy là người đầu tiên đặt câu hỏi về tin đăng này.</p>
+                        </div>
                         @endforelse
                     </div>
 
                     {{-- Form bình luận gốc --}}
                     @auth
-                        <div class="mt-4 pt-3 border-top">
-                            <h6 class="fw-bold small mb-3">Để lại thắc mắc của bạn:</h6>
-                            <form action="{{ route('comments.store', $salePost->id) }}" method="POST">
-                                @csrf
-                                <div class="input-group bg-light p-2 rounded-pill shadow-sm">
-                                    <input type="text" name="content"
-                                        class="form-control border-0 bg-transparent px-4" placeholder="Viết bình luận..."
-                                        required>
-                                    <button class="btn btn-primary-custom rounded-pill px-4" type="submit">Gửi
-                                        tin</button>
-                                </div>
-                            </form>
-                        </div>
+                    <div class="mt-4 pt-3 border-top">
+                        <h6 class="fw-bold small mb-3">Để lại thắc mắc của bạn:</h6>
+                        <form action="{{ route('comments.store', $salePost->id) }}" method="POST">
+                            @csrf
+                            <div class="input-group bg-light p-2 rounded-pill shadow-sm">
+                                <input type="text" name="content"
+                                    class="form-control border-0 bg-transparent px-4" placeholder="Viết bình luận..."
+                                    required>
+                                <button class="btn btn-primary-custom rounded-pill px-4" type="submit">Gửi
+                                    tin</button>
+                            </div>
+                        </form>
+                    </div>
                     @else
-                        <div class="alert alert-light text-center rounded-4 py-3 small">
-                            Vui lòng <a href="{{ route('login-form') }}" class="fw-bold">đăng nhập</a> để tham gia thảo
-                            luận.
-                        </div>
+                    <div class="alert alert-light text-center rounded-4 py-3 small">
+                        Vui lòng <a href="{{ route('login-form') }}" class="fw-bold">đăng nhập</a> để tham gia thảo
+                        luận.
+                    </div>
                     @endauth
                 </div>
 
@@ -624,41 +624,41 @@
                         <p class="text-muted small mb-3">Người đăng tin chuyên nghiệp</p>
 
                         @if (auth()->check() && (int) auth()->id() === (int) $salePost->user_id)
-                            <div class="mb-3">
-                                @if ($salePost->status)
-                                    <div class="alert alert-success rounded-4 py-2 small fw-bold mb-0">
-                                        <i class="fas fa-check-circle me-2"></i> Bài đăng đã được duyệt và đang hiển
-                                        thị công khai
-                                    </div>
-                                @else
-                                    <div class="alert alert-warning rounded-4 py-2 small fw-bold mb-0">
-                                        <i class="fas fa-clock me-2"></i> Bài đăng đang chờ admin phê duyệt
-                                    </div>
-                                @endif
+                        <div class="mb-3">
+                            @if ($salePost->status)
+                            <div class="alert alert-success rounded-4 py-2 small fw-bold mb-0">
+                                <i class="fas fa-check-circle me-2"></i> Bài đăng đã được duyệt và đang hiển
+                                thị công khai
                             </div>
+                            @else
+                            <div class="alert alert-warning rounded-4 py-2 small fw-bold mb-0">
+                                <i class="fas fa-clock me-2"></i> Bài đăng đang chờ admin phê duyệt
+                            </div>
+                            @endif
+                        </div>
                         @endif
 
                         <div class="d-grid gap-3">
                             @auth
-                                @if (auth()->id() !== (int) $salePost->user_id)
-                                    <form action="{{ route('contacts.start') }}" method="POST" class="m-0">
-                                        @csrf
-                                        <input type="hidden" name="user_two_id" value="{{ $salePost->user_id }}">
-                                        <input type="hidden" name="sale_post_id" value="{{ $salePost->id }}">
-                                        <button type="submit"
-                                            class="btn-custom btn-primary-custom w-100 justify-content-center py-3">
-                                            <i class="fas fa-comment-dots"></i> Gửi lời nhắn
-                                        </button>
-                                    </form>
-                                @else
-                                    <div class="alert alert-primary rounded-4 py-3 small fw-bold">
-                                        <i class="fas fa-info-circle me-2"></i> Đây là bài đăng của bạn
-                                    </div>
-                                @endif
+                            @if (auth()->id() !== (int) $salePost->user_id)
+                            <form action="{{ route('contacts.start') }}" method="POST" class="m-0">
+                                @csrf
+                                <input type="hidden" name="user_two_id" value="{{ $salePost->user_id }}">
+                                <input type="hidden" name="sale_post_id" value="{{ $salePost->id }}">
+                                <button type="submit"
+                                    class="btn-custom btn-primary-custom w-100 justify-content-center py-3">
+                                    <i class="fas fa-comment-dots"></i> Gửi lời nhắn
+                                </button>
+                            </form>
                             @else
-                                <a href="{{ route('login-form') }}"
-                                    class="btn-custom btn-primary-custom justify-content-center py-3">Đăng nhập để liên
-                                    hệ</a>
+                            <div class="alert alert-primary rounded-4 py-3 small fw-bold">
+                                <i class="fas fa-info-circle me-2"></i> Đây là bài đăng của bạn
+                            </div>
+                            @endif
+                            @else
+                            <a href="{{ route('login-form') }}"
+                                class="btn-custom btn-primary-custom justify-content-center py-3">Đăng nhập để liên
+                                hệ</a>
                             @endauth
 
                             <!-- ✅ ĐỔI THẺ ĐIỆN THOẠI: click -> hiện modal bảo trì -->
@@ -752,9 +752,22 @@
                 <div class="modal-footer border-0 px-4 pb-4">
                     <button type="button" class="btn btn-secondary rounded-pill px-4"
                         data-bs-dismiss="modal">Đóng</button>
-                    <a href="{{ route('contacts.start') }}" class="btn btn-primary-custom rounded-pill px-4">
-                        <i class="fas fa-comment-dots me-2"></i>Nhắn tin thay thế
+                    @auth
+                    <form action="{{ route('contacts.start') }}" method="POST" class="m-0">
+                        @csrf
+                        <input type="hidden" name="user_two_id" value="{{ $salePost->user_id }}">
+                        <input type="hidden" name="sale_post_id" value="{{ $salePost->id }}">
+                        <button type="submit"
+                            class="btn btn-primary-custom rounded-pill px-4">
+                            <i class="fas fa-comment-dots"></i> Nhắn tin thay thế 
+                        </button>
+                    </form>
+                    @else
+                    <a href="{{ route('login-form') }}" class="btn btn-primary-custom rounded-pill px-4">
+                        <i class="fas fa-sign-in-alt me-2"></i>Đăng nhập để nhắn tin
                     </a>
+                    @endauth
+
                 </div>
             </div>
         </div>
