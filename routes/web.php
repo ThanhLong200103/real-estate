@@ -167,3 +167,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
         Route::patch('/update/{id}', [AdminReportController::class, 'updateStatus'])->name('update-report-admin');
     });
 });
+//redirect sang home 
+Route::get('/', function () {
+    return redirect('/home');
+});

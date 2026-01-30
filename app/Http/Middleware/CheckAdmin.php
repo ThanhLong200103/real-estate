@@ -13,7 +13,7 @@ class CheckAdmin
     {
         // strtolower giúp khớp với cả 'Admin' (Seeder) và 'admin' (Middleware)
         if (!Auth::check() || strtolower(Auth::user()->role) !== 'admin') {
-            return redirect('/')->with('error', 'Bạn không có quyền truy cập khu vực này.');
+           abort(403, 'Unauthorized action.');
         }
 
         return $next($request);

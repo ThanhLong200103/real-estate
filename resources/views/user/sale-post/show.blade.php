@@ -759,7 +759,7 @@
                         <input type="hidden" name="sale_post_id" value="{{ $salePost->id }}">
                         <button type="submit"
                             class="btn btn-primary-custom rounded-pill px-4">
-                            <i class="fas fa-comment-dots"></i> Nhắn tin thay thế 
+                            <i class="fas fa-comment-dots"></i> Nhắn tin thay thế
                         </button>
                     </form>
                     @else
