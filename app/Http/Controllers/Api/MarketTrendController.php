@@ -37,7 +37,8 @@ class MarketTrendController extends Controller
         $m12 = $descData->get(12);   // 1 năm trước
 
         // 3. Giả lập giá trị dự báo cho tháng tiếp theo (Prophet giả lập)
-        // Ở đây giả định tăng 2% so với tháng hiện tại để hiển thị điểm cuối trên biểu đồ
+        
+        // “Đây là mô hình baseline (fallback) khi AI không đủ dữ liệu.”
         $forecastValue = $latest ? $latest->avg_price_per_m2 * 1.02 : 0;
 
         return response()->json([

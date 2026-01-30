@@ -64,7 +64,7 @@ class SalePost extends Model
                     ['district_id' => $districtId, 'month_year' => $monthYear],
                     [
                         'avg_price_per_m2' => $stats->avg_price,
-                        'total_posts' => $stats->total,
+                        'post_count' => $stats->total,
                         'updated_at' => now()
                     ]
                 );
@@ -133,5 +133,4 @@ class SalePost extends Model
     {
         return $this->hasMany(Comment::class)->latest();
     }
-    
 }

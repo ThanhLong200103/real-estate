@@ -510,8 +510,8 @@
                             '<span class="spinner-border spinner-border-sm me-2"></span>AI đang phân tích dữ liệu thị trường...';
                     }
 
-                    // Gọi API duy nhất lấy dữ liệu từ MarketTrendSeeder
-                    fetch(`/api/market-forecast/${districtId}`)
+                    // Gọi API AI (AI thật + fallback)
+                    fetch(`/api/forecast?district_id=${districtId}`)
                         .then(response => {
                             if (!response.ok) throw new Error('API 404 hoặc lỗi server');
                             return response.json();

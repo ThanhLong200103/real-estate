@@ -6,19 +6,17 @@ use App\Http\Requests\SalePost\StoreSalePostRequest;
 use App\Models\{SalePost, Category, Province, District, Ward};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Auth, DB, Log, Storage};
-use App\Services\ProphetService;
 use Illuminate\Support\Str;
 
 class SalePostController extends Controller
 {
 
-    public function index(Request $request, ProphetService $prophetService)
+    public function index(Request $request)
+
     {
 
         $categories = Category::all();
         $provinces  = Province::all();
-
-
         $popularLocations = Province::withCount([
             'sale_posts' => fn($q) => $q->where('status', true)
         ])
@@ -32,7 +30,7 @@ class SalePostController extends Controller
             ->limit(8)
             ->get();
 
-     
+
         $query = SalePost::with([
             'images',
             'category',
@@ -55,17 +53,17 @@ class SalePostController extends Controller
             : 1;
 
         if ($targetDistrictId) {
-            $forecast = $prophetService->predictByDistrict($targetDistrictId);
+            $forecast = null;
         }
 
-    
+
         return view('home', compact(
             'rentPosts',
             'categories',
             'provinces',
             'popularLocations',
             'latestPosts',
-            'forecast' 
+            'forecast'
         ));
     }
 

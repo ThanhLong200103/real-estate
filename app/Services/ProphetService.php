@@ -17,7 +17,7 @@ class ProphetService
      */
     public function predictByDistrict($districtId)
     {
-        // Gói toàn bộ logic cũ vào trong Cache::remember
+        // Gói toàn bộ logic vào trong Cache::remember
         return Cache::remember("forecast_district_{$districtId}", 3600, function () use ($districtId) {
 
             $history = DB::table('market_trends')
@@ -32,14 +32,33 @@ class ProphetService
             $jsonInput = json_encode($history);
             $scriptPath = base_path('forecast_engine.py');
 
-            $process = new Process(['python', $scriptPath, $jsonInput]);
-            $process->run();
+            // Khởi tạo tiến trình
+            $process = new Process(['python3', $scriptPath, $jsonInput]);
 
-            if (!$process->isSuccessful()) {
-                return ['error' => 'Lỗi thực thi AI.'];
+            try {
+                // Thực thi script Python
+                $process->run();
+
+                // Kiểm tra nếu thực thi thất bại, ném ra Exception theo chuẩn Symfony
+                if (!$process->isSuccessful()) {
+                    throw new ProcessFailedException($process);
+                }
+
+                // Trả về kết quả giải mã JSON nếu thành công
+                return json_decode($process->getOutput(), true);
+            } catch (ProcessFailedException $e) {
+                // Bắt lỗi và trả về thông tin chi tiết
+                return [
+                    'error' => 'Lỗi AI',
+                    'detail' => $e->getMessage() // Trả về thông tin lỗi chi tiết từ Process
+                ];
+            } catch (\Exception $e) {
+                // Bắt các lỗi phát sinh khác (nếu có)
+                return [
+                    'error' => 'Hệ thống gặp sự cố',
+                    'detail' => $e->getMessage()
+                ];
             }
-
-            return json_decode($process->getOutput(), true);
         });
     }
 }
