@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -11,7 +10,7 @@ class MarketTrendController extends Controller
 {
     public function getForecast($district_id)
     {
-        // 1. Lấy dữ liệu lịch sử để vẽ biểu đồ (Sắp xếp từ cũ đến mới)
+        // 1. Lấy dữ liệu lịch sử
         $historyData = DB::table('market_trends')
             ->where('district_id', $district_id)
             ->orderBy('month_year', 'asc')
@@ -21,40 +20,47 @@ class MarketTrendController extends Controller
             return response()->json(['error' => 'Chưa có dữ liệu xu hướng cho quận này'], 404);
         }
 
+        // 2. Format history giống AI
         $history = $historyData->map(function ($item) {
             return [
-                'ds' => Carbon::parse($item->month_year)->format('m/Y'),
-                'y' => (int) $item->avg_price_per_m2
+                'ds' => Carbon::parse($item->month_year)->format('Y-m'),
+                'y'  => round($item->avg_price_per_m2, 2)
             ];
         });
 
-        // 2. Lấy các mốc dữ liệu để tính toán tăng trưởng (Sắp xếp từ mới đến cũ)
+        // 3. Dữ liệu tính tăng trưởng
         $descData = $historyData->reverse()->values();
 
-        $latest = $descData->get(0); // Tháng gần nhất
-        $m1 = $descData->get(1);     // 1 tháng trước
-        $m3 = $descData->get(3);     // 3 tháng trước
-        $m12 = $descData->get(12);   // 1 năm trước
+        $latest = $descData->get(0);
+        $m1  = $descData->get(1);
+        $m3  = $descData->get(3);
+        $m12 = $descData->get(12);
 
-        // 3. Giả lập giá trị dự báo cho tháng tiếp theo (Prophet giả lập)
-        
-        // “Đây là mô hình baseline (fallback) khi AI không đủ dữ liệu.”
-        $forecastValue = $latest ? $latest->avg_price_per_m2 * 1.02 : 0;
+        $currentVal = $latest?->avg_price_per_m2 ?? 0;
+
+        // 4.  GIẢ LẬP 12 THÁNG TƯƠNG LAI (future)
+        $future = [];
+        $baseDate  = Carbon::parse($latest->month_year);
+        $basePrice = $currentVal;
+
+        for ($i = 1; $i <= 12; $i++) {
+            $basePrice *= 1.02; // +2% / tháng (baseline)
+            $future[] = [
+                'ds' => $baseDate->copy()->addMonths($i)->format('Y-m'),
+                'y'  => round($basePrice, 2)
+            ];
+        }
 
         return response()->json([
-            // Dữ liệu cho biểu đồ
+            'current' => round($currentVal, 2),
+
+            'month'   => $this->calculateGrowth($currentVal, $m1?->avg_price_per_m2),
+            'quarter' => $this->calculateGrowth($currentVal, $m3?->avg_price_per_m2),
+            'year'    => $this->calculateGrowth($currentVal, $m12?->avg_price_per_m2),
+
+            // QUAN TRỌNG: key giống AI
             'history' => $history,
-            'forecast_value' => round($forecastValue),
-
-            // Dữ liệu cho các thẻ thống kê %
-            'month' => $this->calculateGrowth($latest?->avg_price_per_m2, $m1?->avg_price_per_m2),
-            'quarter' => $this->calculateGrowth($latest?->avg_price_per_m2, $m3?->avg_price_per_m2),
-            'year' => $this->calculateGrowth($latest?->avg_price_per_m2, $m12?->avg_price_per_m2),
-
-            // Các key này dùng cho Fetch JavaScript bạn vừa thêm
-            'one_month' => $this->calculateGrowth($latest?->avg_price_per_m2, $m1?->avg_price_per_m2),
-            'three_months' => $this->calculateGrowth($latest?->avg_price_per_m2, $m3?->avg_price_per_m2),
-            'one_year' => $this->calculateGrowth($latest?->avg_price_per_m2, $m12?->avg_price_per_m2),
+            'future'  => $future
         ]);
     }
 

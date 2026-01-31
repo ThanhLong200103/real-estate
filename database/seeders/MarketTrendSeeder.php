@@ -15,29 +15,56 @@ class MarketTrendSeeder extends Seeder
 
         $districts = District::all();
         $data = [];
-        $monthsToSeed = 24; // 2 năm dữ liệu để vẽ biểu đồ dài hạn
+        $monthsToSeed = 30; // 2.5 năm dữ liệu (Prophet thích >= 24)
 
-        $this->command->info("Đang tạo dữ liệu xu hướng thị trường cho " . $districts->count() . " quận huyện...");
+        $this->command->info("Đang tạo dữ liệu xu hướng thị trường (biến động mạnh) cho {$districts->count()} quận...");
 
         foreach ($districts as $district) {
-            // Giá khởi điểm ngẫu nhiên cho mỗi quận
-            $currentPrice = rand(25, 80) * 1_000_000;
+
+            // Giá khởi điểm: 40 – 120 triệu / m2
+            $currentPrice = rand(40, 120) * 1_000_000;
 
             for ($i = $monthsToSeed; $i >= 0; $i--) {
-                // Biến động giá từ -2% đến +4% để tạo xu hướng tăng nhẹ (thực tế hơn)
-                $fluctuation = rand(-20, 40) / 1000;
+
+                /**
+                 * 1️⃣ Xu hướng dài hạn: +0.3% → +0.8% / tháng
+                 */
+                $trend = rand(3, 8) / 1000;
+
+                /**
+                 * 2️⃣ Nhiễu thị trường: -3% → +3%
+                 */
+                $noise = rand(-30, 30) / 1000;
+
+                /**
+                 * 3️⃣ Cú sốc bất thường (xác suất ~15%)
+                 */
+                $shock = 0;
+                if (rand(1, 100) <= 15) {
+                    // Sốc âm mạnh hoặc bật tăng
+                    $shock = rand(-80, 120) / 1000; // -8% → +12%
+                }
+
+                $fluctuation = $trend + $noise + $shock;
+
+                // Áp dụng biến động
                 $currentPrice = (int) ($currentPrice * (1 + $fluctuation));
 
+                // Chặn giá không quá thấp
+                if ($currentPrice < 15_000_000) {
+                    $currentPrice = rand(15, 20) * 1_000_000;
+                }
+
                 $data[] = [
-                    'district_id'      => $district->id,
-                    'month_year'        => Carbon::now()->subMonths($i)->format('Y-m-01'),
-                    'avg_price_per_m2'  => $currentPrice,
-                    'post_count'        => rand(50, 200),
-                    'created_at'        => now(),
-                    'updated_at'        => now(),
+                    'district_id'     => $district->id,
+                    'month_year'      => Carbon::now()->subMonths($i)->format('Y-m-01'),
+                    'avg_price_per_m2' => $currentPrice,
+                    'post_count'      => rand(60, 300),
+                    'created_at'      => now(),
+                    'updated_at'      => now(),
                 ];
 
-                // Insert theo lô (batch) 500 bản ghi một lần để không quá tải bộ nhớ
+                // Insert batch
                 if (count($data) >= 500) {
                     DB::table('market_trends')->insert($data);
                     $data = [];
@@ -45,11 +72,10 @@ class MarketTrendSeeder extends Seeder
             }
         }
 
-        // Insert nốt số dữ liệu còn dư
         if (!empty($data)) {
             DB::table('market_trends')->insert($data);
         }
 
-        $this->command->info("Đã tạo xong dữ liệu Market Trends!");
+        $this->command->info("Tạo dữ liệu market trend thành công");
     }
 }

@@ -428,10 +428,10 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
-        /* ================== QUẢN LÝ BIỂU ĐỒ (CHART.JS) ================== */
         let forecastChart = null;
+        /* ================== QUẢN LÝ BIỂU ĐỒ (CHART.JS) ================== */
+        function renderChart(history, future) {
 
-        function renderChart(history, forecastValue) {
             const canvas = document.getElementById('forecastChart');
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
@@ -440,54 +440,52 @@
                 forecastChart.destroy();
             }
 
-            // Xử lý labels (tháng) và data (giá) từ history
-            const labels = history.map(item => item.ds);
-            const prices = history.map(item => item.y);
+            const historyLabels = history.map(i => i.ds);
+            const historyPrices = history.map(i => i.y);
 
-            // Thêm điểm dự báo vào cuối biểu đồ
-            labels.push("Dự báo");
-            prices.push(forecastValue);
+            const futureLabels = future.map(i => i.ds);
+            const futurePrices = future.map(i => i.y);
+
 
             forecastChart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: labels,
+                    labels: [...historyLabels, ...futureLabels],
                     datasets: [{
-                        label: 'Giá trung bình (VNĐ/m²)',
-                        data: prices,
-                        borderColor: '#0d6efd',
-                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
-                        borderWidth: 3,
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 4,
-                        pointBackgroundColor: (context) => {
-                            const index = context.dataIndex;
-                            return index === prices.length - 1 ? '#ffc107' : '#0d6efd';
+                            label: 'Giá lịch sử',
+                            data: historyPrices,
+                            borderColor: '#0d6efd',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: false
+                        },
+                        {
+                            label: 'AI dự báo',
+                            data: [
+                                ...Array(historyPrices.length - 1).fill(null),
+                                historyPrices.at(-1),
+                                ...futurePrices
+                            ],
+                            borderColor: '#fd7e14',
+                            borderDash: [6, 6],
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: false
                         }
-                    }]
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: false,
-                            ticks: {
-                                callback: function(value) {
-                                    return (value / 1000000).toFixed(1) + ' Tr';
-                                }
-                            }
+                            display: true
                         }
                     }
                 }
             });
         }
+
 
         /* ================== AI FETCH + UI ================== */
         document.addEventListener('DOMContentLoaded', function() {
@@ -517,21 +515,23 @@
                             return response.json();
                         })
                         .then(data => {
+                            console.log('FORECAST API:', data);
                             if (data.error) {
                                 document.getElementById('ai-status').innerText = data.error;
                                 return;
                             }
 
                             // Cập nhật các chỉ số tăng trưởng (Khớp ID với HTML của bạn)
-                            updateGrowthUI('forecast-month', data.one_month);
-                            updateGrowthUI('forecast-quarter', data.three_months);
-                            updateGrowthUI('forecast-year', data.one_year);
+                            updateGrowthUI('forecast-month', data.month);
+                            updateGrowthUI('forecast-quarter', data.quarter);
+                            updateGrowthUI('forecast-year', data.year);
+
 
                             // Vẽ biểu đồ với history và forecast_value nhận được
                             if (data.history && data.history.length > 0) {
-                                renderChart(data.history, data.forecast_value);
+                                renderChart(data.history, data.future);
                                 document.getElementById('ai-status').innerText =
-                                    "Dự báo hoàn tất dựa trên dữ liệu 24 tháng gần nhất.";
+                                    "Dự báo hoàn tất dựa trên dữ liệu lịch sử thị trường.";
                             } else {
                                 document.getElementById('ai-status').innerText =
                                     "Không đủ dữ liệu lịch sử để dự báo.";
